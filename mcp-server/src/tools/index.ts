@@ -31,6 +31,8 @@ import createGetVictoryProgressTool from "./knowledge/get-victory-progress.js";
 import createGetMilitaryReportTool from "./knowledge/get-military-report.js";
 import createSearchDatabaseTool from "./general/search-database.js";
 import createGetDiplomaticEventsTool from "./knowledge/get-diplomatic-events.js";
+import createGetStrategicLedgerTool from "./knowledge/get-strategic-ledger.js";
+import createUpdateStrategicLedgerTool from "./actions/update-strategic-ledger.js";
 
 // Tool factory configuration - one line per tool
 const toolFactories = {
@@ -50,6 +52,8 @@ const toolFactories = {
     getMilitaryReport: createGetMilitaryReportTool,
     getEvents: createGetEventsTool,
     getDiplomaticEvents: createGetDiplomaticEventsTool,
+    getStrategicLedger: createGetStrategicLedgerTool,
+    updateStrategicLedger: createUpdateStrategicLedgerTool,
     getPlayers: createGetPlayersTool,
     getOpinions: createGetOpinionsTool,
     getCities: createGetCitiesTool,

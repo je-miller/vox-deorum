@@ -112,6 +112,23 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
   - Time Victory: If no one achieves any other victory by the end of the game, the civilization with the highest score wins.`;
 
   /**
+   * Shared prompt: Strategic Ledger instructions
+   */
+  public static readonly ledgerPrompt = `- Strategic Ledger: your persistent cross-turn memory, provided in each turn's context.
+  - Update your ledger each turn by calling \`update-strategic-ledger\` BEFORE calling \`set-strategy\` or \`keep-status-quo\`.
+  - Use it to track: multi-turn plans, opponent hypotheses, diplomatic commitments, threat assessments, and victory roadmap.
+  - The Decision Audit shows your last 5 strategy decisions and rationale for self-review.`;
+
+  /**
+   * Shared prompt: Endgame awareness instructions
+   */
+  public static readonly endgameAwarenessPrompt = `- Endgame Awareness:
+  - When you or an opponent is close to victory, shift to endgame mode.
+  - If you are close to winning: focus ALL resources on closing out the victory. Drop secondary objectives.
+  - If an opponent is close to winning: take immediate countermeasures (war, espionage, diplomacy) to delay them.
+  - Victory proximity is marked with urgency levels: APPROACHING → IMMINENT → CRITICAL.`;
+
+  /**
    * Shared prompt: Players information description
    */
   public static readonly playersInfoPrompt = `- Players: summary reports about visible players in the world.
@@ -125,6 +142,7 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
   public getActiveTools(parameters: StrategistParameters): string[] | undefined {
     // Return specific tools the strategist needs
     return [
+      "update-strategic-ledger",
       parameters.mode === "Strategy" ? "set-strategy" : "set-flavors",
       "set-persona",
       "set-research",

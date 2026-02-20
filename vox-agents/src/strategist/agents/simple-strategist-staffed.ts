@@ -13,6 +13,7 @@ import { getRecentGameState, StrategistParameters } from "../strategy-parameters
 import { jsonToMarkdown } from "../../utils/tools/json-to-markdown.js";
 import { requestBriefing, assembleBriefings, briefingInstructionKeys } from "../../briefer/briefing-utils.js";
 import { getStrategicPlayersReport } from "../../utils/report-filters.js";
+import { analyzeVictoryUrgency, formatUrgencySection } from "../../utils/victory-urgency.js";
 
 /**
  * A staffed strategist agent that uses specialized briefers for comprehensive analysis.
@@ -52,7 +53,9 @@ ${SimpleStrategistBase.getDecisionPrompt(parameters.mode)}
 You will receive the following reports:
 ${SimpleStrategistBase.optionsDescriptionPrompt}
 ${SimpleStrategistBase.strategiesDescriptionPrompt}
+${SimpleStrategistBase.ledgerPrompt}
 ${SimpleStrategistBase.victoryConditionsPrompt}
+${SimpleStrategistBase.endgameAwarenessPrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
 - Briefings: prepared by your specialized briefers, covering Military, Economy, and Diplomacy aspects.
   - You will make independent and wise judgment based on all briefings.`.trim()
@@ -119,6 +122,10 @@ ${SimpleStrategistBase.playersInfoPrompt}
     // Save the assembled briefings for spokesperson use
     state.reports["briefing"] = briefingsContent;
 
+    // Compute urgency section before building the message (zero token cost when urgency is 'none')
+    const urgency = analyzeVictoryUrgency(state.victory, parameters.metadata?.YouAre?.Name);
+    const urgencySection = urgency.urgencyLevel !== 'none' ? formatUrgencySection(urgency) + '\n' : '';
+
     // Return the messages with all briefings
     return [{
       role: "system",
@@ -142,11 +149,13 @@ ${jsonToMarkdown(Options, {
       }
     }, {
       role: "user",
-      content: `
-# Strategies
+      content: `${urgencySection}# Strategies
 Strategies: existing strategic decisions from you.
 
 ${jsonToMarkdown(Strategy)}
+
+# Strategic Ledger
+${state.ledger ? jsonToMarkdown(state.ledger) : 'No ledger yet — initialize your ledger this turn.'}
 
 # Players
 Players: summary reports about visible players in the world.

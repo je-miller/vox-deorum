@@ -12,6 +12,7 @@ import { VoxContext } from "../../infra/vox-context.js";
 import { getRecentGameState, StrategistParameters } from "../strategy-parameters.js";
 import { jsonToMarkdown } from "../../utils/tools/json-to-markdown.js";
 import { SimpleBriefer } from "../../briefer/simple-briefer.js";
+import { analyzeVictoryUrgency, formatUrgencySection } from "../../utils/victory-urgency.js";
 
 /**
  * A simple strategist agent that analyzes the game state and sets an appropriate strategy.
@@ -46,7 +47,9 @@ ${SimpleStrategistBase.getDecisionPrompt(parameters.mode)}
 You will receive the following reports:
 ${SimpleStrategistBase.optionsDescriptionPrompt}
 ${SimpleStrategistBase.strategiesDescriptionPrompt}
+${SimpleStrategistBase.ledgerPrompt}
 ${SimpleStrategistBase.victoryConditionsPrompt}
+${SimpleStrategistBase.endgameAwarenessPrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
 ${SimpleBriefer.citiesPrompt}
 ${SimpleBriefer.militaryPrompt}
@@ -62,6 +65,10 @@ ${SimpleBriefer.eventsPrompt}`.trim()
     await super.getInitialMessages(parameters, input, context);
     const { YouAre, ...SituationData } = parameters.metadata || {};
     const { Options, ...Strategy } = state.options || {};
+    // Compute urgency section before building the message (zero token cost when urgency is 'none')
+    const urgency = analyzeVictoryUrgency(state.victory, parameters.metadata?.YouAre?.Name);
+    const urgencySection = urgency.urgencyLevel !== 'none' ? formatUrgencySection(urgency) + '\n' : '';
+
     // Return the messages
     return [{
       role: "system",
@@ -86,11 +93,13 @@ ${jsonToMarkdown(Options, {
       }
     }, {
       role: "user",
-      content: `
-# Strategies
+      content: `${urgencySection}# Strategies
 Strategies: existing strategic decisions from you.
 
 ${jsonToMarkdown(Strategy)}
+
+# Strategic Ledger
+${state.ledger ? jsonToMarkdown(state.ledger) : 'No ledger yet — initialize your ledger this turn.'}
 
 # Victory Progress
 Victory Progress: current progress towards each type of victory.

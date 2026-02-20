@@ -17,7 +17,8 @@ import {
   FlavorChange,
   PlayerOptions,
   VictoryProgress,
-  TacticalZones
+  TacticalZones,
+  StrategicLedger
 } from './timed';
 import { PlayerInformation } from './public';
 
@@ -120,6 +121,7 @@ export interface KnowledgeDatabase {
   ResearchChanges: ResearchChange;
   RelationshipChanges: RelationshipChange;
   VictoryProgress: VictoryProgress;
+  StrategicLedgers: StrategicLedger;
   // Public Knowledge
   PlayerInformations: PlayerInformation;
 }

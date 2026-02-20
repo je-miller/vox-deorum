@@ -324,5 +324,16 @@ export async function setupKnowledgeDatabase(
   // Create indexes for TacticalZones table
   await createTimedKnowledgeIndexes(db, 'TacticalZones', 'PlayerID');
 
+  // Create StrategicLedgers table (MutableKnowledge implementation)
+  await createMutableKnowledgeTable(db, 'StrategicLedgers')
+    .addColumn('ActivePlan', 'text')
+    .addColumn('Hypotheses', 'text')
+    .addColumn('DiplomaticCommitments', 'text')
+    .addColumn('ThreatAssessment', 'text')
+    .addColumn('VictoryRoadmap', 'text')
+    .execute();
+  // Create indexes for StrategicLedgers table
+  await createMutableKnowledgeIndexes(db, 'StrategicLedgers');
+
   return db;
 }

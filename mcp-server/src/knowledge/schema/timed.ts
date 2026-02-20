@@ -1,5 +1,5 @@
 import { JSONColumnType } from "kysely";
-import { MutableKnowledge, TimedKnowledge } from "./base";
+import { MutableKnowledge, TimedKnowledge } from "./base.js";
 import * as z from "zod";
 
 /**
@@ -495,4 +495,17 @@ export interface TacticalZones extends TimedKnowledge {
   NeutralStrength: number; // Neutral strength
   Neighbors: JSONColumnType<number[]>; // Array of neighboring zone IDs
   Units: JSONColumnType<Record<string, Record<string, number>>>; // Unit assignments: Civ name -> Unit type -> Count
+}
+
+/**
+ * Strategic ledger for AI player cross-turn memory
+ * Free-text fields for maximum LLM flexibility
+ * Visible only to the player themselves (self-knowledge)
+ */
+export interface StrategicLedger extends MutableKnowledge {
+  ActivePlan: string | null;
+  Hypotheses: string | null;
+  DiplomaticCommitments: string | null;
+  ThreatAssessment: string | null;
+  VictoryRoadmap: string | null;
 }

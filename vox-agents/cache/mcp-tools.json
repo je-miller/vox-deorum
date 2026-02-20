@@ -127,6 +127,22 @@
     }
   },
   {
+    "name": "get-strategic-ledger",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
+    "name": "update-strategic-ledger",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
     "name": "get-players",
     "_meta": {
       "autoComplete": [

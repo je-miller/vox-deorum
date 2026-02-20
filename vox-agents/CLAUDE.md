@@ -305,6 +305,20 @@ VoxAgent (Base)
 - Supports caching via content hashing to avoid redundant LLM calls
 - Shared historian guidelines ensure consistent tone across all summaries
 
+#### Strategic Ledger Integration
+- Strategist agents read and update a cross-turn memory ledger each turn
+- Ledger fields (ActivePlan, Hypotheses, DiplomaticCommitments, ThreatAssessment, VictoryRoadmap) injected into user messages
+- `update-strategic-ledger` tool is called before strategy decisions for persistent memory
+- Decision Audit (last 5 LLM-authored strategy changes) provides self-review capability
+- Graceful degradation: ledger fetch failures don't block strategist execution
+
+#### Victory Urgency Detection
+- `analyzeVictoryUrgency()` utility in `src/utils/victory-urgency.ts` detects endgame situations
+- Heuristic thresholds per victory type classify urgency as approaching/imminent/critical
+- Urgency sections injected at the TOP of strategist user messages (high visibility)
+- Zero token cost when no urgency detected (section not injected)
+- `formatUrgencySection()` generates markdown with VICTORY WITHIN REACH and URGENT THREAT headers
+
 ## Integration Points
 
 ### With Game Process

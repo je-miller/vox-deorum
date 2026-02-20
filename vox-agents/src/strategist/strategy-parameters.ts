@@ -6,8 +6,12 @@ import type { EventsReport } from "../../../mcp-server/dist/tools/knowledge/get-
 import type { MilitaryReport } from "../../../mcp-server/dist/tools/knowledge/get-military-report.js";
 import type { OptionsReport } from "../../../mcp-server/dist/tools/knowledge/get-options.js";
 import type { VictoryProgressReport } from "../../../mcp-server/dist/tools/knowledge/get-victory-progress.js";
+import type { StrategicLedgerReport } from "../../../mcp-server/dist/tools/knowledge/get-strategic-ledger.js";
 import type { GameMetadata } from "../../../mcp-server/dist/tools/knowledge/get-metadata.js"
 import { StrategyDecisionType } from "../types/config.js";
+import { createLogger } from "../utils/logger.js";
+
+const logger = createLogger('strategy-parameters');
 
 /**
  * Parameters for the strategist agent
@@ -47,6 +51,8 @@ export interface GameState {
   military?: MilitaryReport;
   /** Victory condition progress and standings */
   victory?: VictoryProgressReport;
+  /** Strategic ledger for cross-turn memory */
+  ledger?: StrategicLedgerReport;
   /** Additional reports (e.g. briefings) */
   reports: Record<string, string>;
   /** Internal: pending briefing generation promises for deduplication (not serialized) */
@@ -90,13 +96,17 @@ export async function refreshGameState(
     await context.callTool("get-metadata", { PlayerID: parameters.playerID }, parameters);
 
   // Get the information
-  const [players, events, cities, options, victory, military] = await Promise.all([
+  const [players, events, cities, options, victory, military, ledger] = await Promise.all([
     context.callTool("get-players", {}, parameters),
     context.callTool("get-events", {}, parameters),
     context.callTool("get-cities", {}, parameters),
     context.callTool("get-options", { Mode: parameters.mode }, parameters),
     context.callTool("get-victory-progress", {}, parameters),
     context.callTool("get-military-report", {}, parameters),
+    context.callTool("get-strategic-ledger", { PlayerID: parameters.playerID }, parameters).catch(err => {
+      logger.warn('Failed to fetch strategic ledger, continuing without it', { error: err });
+      return undefined;
+    }),
   ]);
 
   // Validate all results are defined and not errors
@@ -115,6 +125,7 @@ export async function refreshGameState(
     options,
     military,
     victory,
+    ledger: isErrorResult(ledger) ? undefined : ledger,
     reports: {},
     turn: parameters.turn
   };

@@ -236,6 +236,13 @@ Scripts are executed within the game context via BridgeManager
 
 ## Development Guidelines
 
+### Strategic Ledger Pattern
+- `StrategicLedgers` table stores free-text cross-turn memory for AI players
+- `get-strategic-ledger` tool reads ledger + computes Decision Audit from StrategyChanges history
+- `update-strategic-ledger` tool uses read-merge-write pattern for partial field updates
+- Both tools extend `ToolBase` directly (pure SQLite, no Lua interaction needed)
+- Ledger fields are free-text strings, not structured JSON, for maximum LLM flexibility
+
 ### Creating New Tools
 1. **Extend abstract base classes** (`DatabaseQueryTool`, `LuaFunctionTool`) not `ToolBase` directly
 2. **Use factory functions** for proper caching
