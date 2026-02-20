@@ -25,11 +25,12 @@ export interface GameMetadata {
 }
 
 export interface PlayerInformation {
-  PlayerId: number;
-  CivilizationTypeName: string;
-  LeaderTypeName: string;
+  Key: number;        // PlayerId equivalent — primary player identifier
+  Civilization: string;
+  Leader: string;
+  TeamID: number;
   IsHuman: number;
-  IsAlive: number;
+  IsMajor: number;
 }
 
 export interface VictoryResult {
@@ -123,7 +124,7 @@ export function getGameMetadata(db: Database.Database): GameMetadata {
 
 export function getPlayers(db: Database.Database): PlayerInformation[] {
   try {
-    return db.prepare('SELECT PlayerId, CivilizationTypeName, LeaderTypeName, IsHuman, IsAlive FROM PlayerInformations').all() as PlayerInformation[];
+    return db.prepare('SELECT Key, Civilization, Leader, TeamID, IsHuman, IsMajor FROM PlayerInformations').all() as PlayerInformation[];
   } catch {
     return [];
   }
@@ -173,11 +174,12 @@ export function getVictoryProgress(db: Database.Database): VictoryProgressEntry[
   }
 }
 
-export function getAiPlayerSummary(db: Database.Database, aiPlayerId: number): PlayerSummary | null {
+// playerKey is the PlayerInformations.Key value for the AI player.
+export function getAiPlayerSummary(db: Database.Database, playerKey: number): PlayerSummary | null {
   try {
     const row = db
       .prepare('SELECT * FROM PlayerSummaries WHERE PlayerId = ? AND IsLatest = 1 ORDER BY Turn DESC LIMIT 1')
-      .get(aiPlayerId) as PlayerSummary | undefined;
+      .get(playerKey) as PlayerSummary | undefined;
     return row ?? null;
   } catch {
     return null;
@@ -238,7 +240,7 @@ export function getRunInfo(dbPath: string): RunInfo | null {
 
     let outcome: 'Win' | 'Loss' | 'Incomplete' = 'Incomplete';
     if (metadata.victoryType && metadata.victoryPlayerID !== null) {
-      const winnerPlayer = players.find((p) => p.PlayerId === metadata.victoryPlayerID);
+      const winnerPlayer = players.find((p) => p.Key === metadata.victoryPlayerID);
       // Win if the victorious player is the AI (not human-controlled).
       outcome = winnerPlayer && winnerPlayer.IsHuman === 0 ? 'Win' : 'Loss';
     }
@@ -267,13 +269,13 @@ export function getRunDetail(dbPath: string) {
     const aiPlayer = players.find((p) => p.IsHuman === 0) ?? null;
     const victoryResult = getVictoryResult(db);
     const victoryProgress = getVictoryProgress(db);
-    const aiSummary = aiPlayer ? getAiPlayerSummary(db, aiPlayer.PlayerId) : null;
+    const aiSummary = aiPlayer ? getAiPlayerSummary(db, aiPlayer.Key) : null;
     const policies = getPolicies(db);
     const strategies = getStrategies(db);
 
     let outcome: 'Win' | 'Loss' | 'Incomplete' = 'Incomplete';
     if (metadata.victoryType && metadata.victoryPlayerID !== null) {
-      const winnerPlayer = players.find((p) => p.PlayerId === metadata.victoryPlayerID);
+      const winnerPlayer = players.find((p) => p.Key === metadata.victoryPlayerID);
       outcome = winnerPlayer && winnerPlayer.IsHuman === 0 ? 'Win' : 'Loss';
     }
 
