@@ -89,8 +89,8 @@ export default async function RunDetailPage({ params }: { params: Promise<{ game
             <CardContent>
               {aiPlayer && (
                 <div className="mb-4">
-                  <p className="text-sm"><span className="text-muted-foreground">Civilization: </span>{aiPlayer.CivilizationTypeName?.replace('CIVILIZATION_', '')}</p>
-                  <p className="text-sm"><span className="text-muted-foreground">Leader: </span>{aiPlayer.LeaderTypeName?.replace('LEADER_', '')}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Civilization: </span>{aiPlayer.Civilization}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Leader: </span>{aiPlayer.Leader}</p>
                 </div>
               )}
               {aiSummary ? (

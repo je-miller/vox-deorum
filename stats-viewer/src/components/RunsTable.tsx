@@ -14,7 +14,7 @@ interface Run {
   turn: number;
   lastSave: string;
   outcome: 'Win' | 'Loss' | 'Incomplete';
-  aiPlayer: { CivilizationTypeName: string } | null;
+  aiPlayer: { Civilization: string } | null;
   victoryType: string | null;
   tokens: { input: number; output: number; total: number };
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
@@ -132,7 +132,7 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
                 <td className="px-3 py-2">
                   <Badge variant={outcomeVariant[run.outcome] ?? 'secondary'}>{run.outcome}</Badge>
                 </td>
-                <td className="px-3 py-2 text-xs">{run.aiPlayer?.CivilizationTypeName?.replace('CIVILIZATION_', '') ?? '—'}</td>
+                <td className="px-3 py-2 text-xs">{run.aiPlayer?.Civilization ?? '—'}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{run.victoryType ?? '—'}</td>
                 <td className="px-3 py-2 text-right tabular-nums">{run.turn}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.input)}</td>

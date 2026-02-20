@@ -12,3 +12,4 @@ scripts/.dll-cache
 
 # Generated Lua files
 vox-agents/scripts/StartGame.temp.lua
+/stats-viewer/*.tsbuildinfo
