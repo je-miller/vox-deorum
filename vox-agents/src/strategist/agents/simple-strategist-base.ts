@@ -120,6 +120,28 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
   - The Decision Audit shows your last 5 strategy decisions and rationale for self-review.`;
 
   /**
+   * Shared prompt: Competitive position warning description
+   */
+  public static readonly competitivePositionPrompt = `- Competitive Position Warnings:
+  - When you are significantly behind the leader in key metrics (cities, score, military), a warning is shown.
+  - Severity levels: CONCERN (<60% of leader) → WARNING (<40%) → CRITICAL (<25%).
+  - Falling behind in multiple metrics simultaneously is especially dangerous.`;
+
+  /**
+   * Shared prompt: Strategy staleness warning description
+   */
+  public static readonly stalenessWarningPrompt = `- Strategy Staleness Warnings:
+  - If your ledger's ActivePlan or ThreatAssessment hasn't changed for 10+ turns, a warning is shown.
+  - Stale strategies may indicate autopilot behavior — reconsider your approach if the world has changed.`;
+
+  /**
+   * Shared prompt: Victory reachability warning description
+   */
+  public static readonly victoryReachabilityPrompt = `- Victory Reachability Warnings:
+  - If your grand strategy targets a victory condition that is currently locked or unavailable, a warning is shown.
+  - Pursuing an unreachable victory wastes resources — pivot to a viable path.`;
+
+  /**
    * Shared prompt: Endgame awareness instructions
    */
   public static readonly endgameAwarenessPrompt = `- Endgame Awareness:
@@ -177,7 +199,7 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
     allSteps: StepResult<Record<string, Tool>>[]
   ): boolean {
     // Stop if we've executed set-strategy tool
-    for (var step of allSteps) {
+    for (const step of allSteps) {
       for (const result of step.toolResults) {
         if (result.toolName === "set-strategy" && result.output) {
           this.logger.debug("Set-strategy tool executed, stopping agent");

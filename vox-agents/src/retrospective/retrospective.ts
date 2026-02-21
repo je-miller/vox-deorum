@@ -27,9 +27,10 @@ export class Retrospective extends Briefer {
    */
   public async getSystem(_parameters: StrategistParameters, _input: string, _context: VoxContext<StrategistParameters>): Promise<string> {
     return `You are a concise strategic analyst for Civilization V with the Vox Populi mod.
-Evaluate whether the previous strategy is working based on the delta metrics and events.
+Evaluate whether the previous strategy is working based on the delta metrics, events, and relative position data.
 Produce a 2-3 sentence assessment that is direct and actionable.
 Focus on what changed, whether the changes align with the stated strategy, and any emerging risks or opportunities.
+Pay attention to the relative position vs opponents and multi-turn trends — falling behind is a stronger signal than single-turn fluctuations.
 Do NOT suggest specific actions — only assess the situation.`.trim();
   }
 

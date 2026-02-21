@@ -12,7 +12,8 @@ import { VoxContext } from "../../infra/vox-context.js";
 import { getRecentGameState, StrategistParameters } from "../strategy-parameters.js";
 import { jsonToMarkdown } from "../../utils/tools/json-to-markdown.js";
 import { SimpleBriefer } from "../../briefer/simple-briefer.js";
-import { analyzeVictoryUrgency, formatUrgencySection } from "../../utils/victory-urgency.js";
+import { analyzeVictoryUrgency, formatUrgencySection, analyzeVictoryReachability, formatReachabilitySection } from "../../utils/victory-urgency.js";
+import { analyzeCompetitivePosition, formatCompetitiveSection, detectLedgerStaleness, formatStalenessSection } from "../../utils/strategic-warnings.js";
 
 /**
  * A simple strategist agent that analyzes the game state and sets an appropriate strategy.
@@ -51,6 +52,9 @@ ${SimpleStrategistBase.ledgerPrompt}
 ${SimpleStrategistBase.retrospectivePrompt}
 ${SimpleStrategistBase.victoryConditionsPrompt}
 ${SimpleStrategistBase.endgameAwarenessPrompt}
+${SimpleStrategistBase.competitivePositionPrompt}
+${SimpleStrategistBase.victoryReachabilityPrompt}
+${SimpleStrategistBase.stalenessWarningPrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
 ${SimpleStrategistBase.geopoliticalPrompt}
 ${SimpleBriefer.citiesPrompt}
@@ -67,9 +71,15 @@ ${SimpleBriefer.eventsPrompt}`.trim()
     await super.getInitialMessages(parameters, input, context);
     const { YouAre, ...SituationData } = parameters.metadata || {};
     const { Options, ...Strategy } = state.options || {};
-    // Compute urgency section before building the message (zero token cost when urgency is 'none')
+    // Compute warning sections (zero token cost when no warnings apply)
     const urgency = analyzeVictoryUrgency(state.victory, parameters.metadata?.YouAre?.Name);
     const urgencySection = urgency.urgencyLevel !== 'none' ? formatUrgencySection(urgency) + '\n' : '';
+    const reachability = analyzeVictoryReachability(state.victory, state.ledger as Record<string, unknown> | undefined);
+    const reachabilitySection = formatReachabilitySection(reachability);
+    const competitive = analyzeCompetitivePosition(state.players, parameters.playerID ?? 0);
+    const competitiveSection = competitive.hasWarnings ? formatCompetitiveSection(competitive) + '\n' : '';
+    const staleness = detectLedgerStaleness(parameters.gameStates, parameters.turn);
+    const stalenessSection = staleness.length > 0 ? formatStalenessSection(staleness) + '\n' : '';
 
     // Return the messages
     return [{
@@ -95,7 +105,7 @@ ${jsonToMarkdown(Options, {
       }
     }, {
       role: "user",
-      content: `${urgencySection}${state.reports["retrospective"] ? `# Retrospective\n${state.reports["retrospective"]}\n\n` : ''}# Strategies
+      content: `${urgencySection}${reachabilitySection}${competitiveSection}${stalenessSection}${state.reports["retrospective"] ? `# Retrospective\n${state.reports["retrospective"]}\n\n` : ''}# Strategies
 Strategies: existing strategic decisions from you.
 
 ${jsonToMarkdown(Strategy)}

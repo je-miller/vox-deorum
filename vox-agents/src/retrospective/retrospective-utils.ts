@@ -69,6 +69,28 @@ export function computeRetrospectiveInput(parameters: StrategistParameters): str
   // Extract major events
   const majorEvents = extractMajorEvents(currentState);
 
+  // Find the top opponent by score for relative position
+  const allPlayers = Array.isArray(currentPlayers) ? currentPlayers : Object.values(currentPlayers);
+  let topOpponent: any = null;
+  for (const p of allPlayers as any[]) {
+    if (!p || typeof p !== 'object' || p.Key === parameters.playerID) continue;
+    if (!topOpponent || (typeof p.Score === 'number' && p.Score > (topOpponent.Score ?? 0))) {
+      topOpponent = p;
+    }
+  }
+
+  // Find the oldest available game state for multi-turn trend
+  let oldestTurn: number | undefined;
+  let oldestState: GameState | undefined;
+  for (const turnStr of Object.keys(parameters.gameStates)) {
+    const turn = Number(turnStr);
+    if (turn < parameters.turn && (oldestTurn === undefined || turn < oldestTurn)) {
+      oldestTurn = turn;
+      oldestState = parameters.gameStates[turn];
+    }
+  }
+  const oldestSelf = oldestState ? findPlayerSummary(oldestState.players, parameters.playerID) : undefined;
+
   // Build the structured input
   const sections: string[] = [];
 
@@ -81,6 +103,33 @@ ${deltas.length > 0 ? deltas.join('\n') : 'No significant changes.'}`);
   if (majorEvents.length > 0) {
     sections.push(`## Major Events This Turn
 ${majorEvents.join('\n')}`);
+  }
+
+  // Relative position vs top opponent
+  if (topOpponent && typeof currentSelf.Score === 'number' && typeof topOpponent.Score === 'number') {
+    const opponentName = topOpponent.Name ?? topOpponent.CivName ?? `Player ${topOpponent.Key}`;
+    const scoreDiff = currentSelf.Score - topOpponent.Score;
+    const sign = scoreDiff > 0 ? '+' : '';
+    const relLines: string[] = [
+      `- Score Gap: ${currentSelf.Score} vs ${topOpponent.Score} (${sign}${scoreDiff})`,
+    ];
+    if (typeof currentSelf.MilitaryStrength === 'number' && typeof topOpponent.MilitaryStrength === 'number') {
+      relLines.push(`- Military Ratio: ${currentSelf.MilitaryStrength} vs ${topOpponent.MilitaryStrength}`);
+    }
+    if (typeof currentSelf.Cities === 'number' && typeof topOpponent.Cities === 'number') {
+      relLines.push(`- City Count: ${currentSelf.Cities} vs ${topOpponent.Cities}`);
+    }
+    sections.push(`## Relative Position vs ${opponentName}\n${relLines.join('\n')}`);
+  }
+
+  // Multi-turn trend (oldest available → current)
+  if (oldestSelf && oldestTurn !== undefined && oldestTurn !== previousTurn) {
+    const trendLines: string[] = [];
+    addDelta(trendLines, 'Score', oldestSelf.Score, currentSelf.Score);
+    addDelta(trendLines, 'Military', oldestSelf.MilitaryStrength, currentSelf.MilitaryStrength);
+    if (trendLines.length > 0) {
+      sections.push(`## Multi-Turn Trend (Turn ${oldestTurn} → ${parameters.turn})\n${trendLines.join('\n')}`);
+    }
   }
 
   return sections.join('\n\n');

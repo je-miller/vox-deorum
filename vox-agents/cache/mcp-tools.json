@@ -143,6 +143,14 @@
     }
   },
   {
+    "name": "get-geopolitical-summary",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
     "name": "get-players",
     "_meta": {
       "autoComplete": [

@@ -13,7 +13,8 @@ import { getRecentGameState, StrategistParameters } from "../strategy-parameters
 import { jsonToMarkdown } from "../../utils/tools/json-to-markdown.js";
 import { requestBriefing, assembleBriefings, briefingInstructionKeys } from "../../briefer/briefing-utils.js";
 import { getStrategicPlayersReport } from "../../utils/report-filters.js";
-import { analyzeVictoryUrgency, formatUrgencySection } from "../../utils/victory-urgency.js";
+import { analyzeVictoryUrgency, formatUrgencySection, analyzeVictoryReachability, formatReachabilitySection } from "../../utils/victory-urgency.js";
+import { analyzeCompetitivePosition, formatCompetitiveSection, detectLedgerStaleness, formatStalenessSection } from "../../utils/strategic-warnings.js";
 
 /**
  * A staffed strategist agent that uses specialized briefers for comprehensive analysis.
@@ -57,6 +58,9 @@ ${SimpleStrategistBase.ledgerPrompt}
 ${SimpleStrategistBase.retrospectivePrompt}
 ${SimpleStrategistBase.victoryConditionsPrompt}
 ${SimpleStrategistBase.endgameAwarenessPrompt}
+${SimpleStrategistBase.competitivePositionPrompt}
+${SimpleStrategistBase.victoryReachabilityPrompt}
+${SimpleStrategistBase.stalenessWarningPrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
 ${SimpleStrategistBase.geopoliticalPrompt}
 - Briefings: prepared by your specialized briefers, covering Military, Economy, and Diplomacy aspects.
@@ -124,9 +128,15 @@ ${SimpleStrategistBase.geopoliticalPrompt}
     // Save the assembled briefings for spokesperson use
     state.reports["briefing"] = briefingsContent;
 
-    // Compute urgency section before building the message (zero token cost when urgency is 'none')
+    // Compute warning sections (zero token cost when no warnings apply)
     const urgency = analyzeVictoryUrgency(state.victory, parameters.metadata?.YouAre?.Name);
     const urgencySection = urgency.urgencyLevel !== 'none' ? formatUrgencySection(urgency) + '\n' : '';
+    const reachability = analyzeVictoryReachability(state.victory, state.ledger as Record<string, unknown> | undefined);
+    const reachabilitySection = formatReachabilitySection(reachability);
+    const competitive = analyzeCompetitivePosition(state.players, parameters.playerID ?? 0);
+    const competitiveSection = competitive.hasWarnings ? formatCompetitiveSection(competitive) + '\n' : '';
+    const staleness = detectLedgerStaleness(parameters.gameStates, parameters.turn);
+    const stalenessSection = staleness.length > 0 ? formatStalenessSection(staleness) + '\n' : '';
 
     // Return the messages with all briefings
     return [{
@@ -151,7 +161,7 @@ ${jsonToMarkdown(Options, {
       }
     }, {
       role: "user",
-      content: `${urgencySection}${state.reports["retrospective"] ? `# Retrospective\n${state.reports["retrospective"]}\n\n` : ''}# Strategies
+      content: `${urgencySection}${reachabilitySection}${competitiveSection}${stalenessSection}${state.reports["retrospective"] ? `# Retrospective\n${state.reports["retrospective"]}\n\n` : ''}# Strategies
 Strategies: existing strategic decisions from you.
 
 ${jsonToMarkdown(Strategy)}

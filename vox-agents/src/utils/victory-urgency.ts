@@ -99,7 +99,7 @@ function analyzeCultural(
   const playerData = data[playerName];
   if (!playerData || typeof playerData !== 'object') return null;
 
-  const influenced = playerData.CivsInfluenced ?? playerData.Influenced ?? 0;
+  const influenced = playerData.InfluentialCivs ?? playerData.CivsInfluenced ?? playerData.Influenced ?? 0;
   if (typeof influenced !== 'number' || influenced <= 0) return null;
 
   const ratio = influenced / civsNeeded;
@@ -255,6 +255,75 @@ export function analyzeVictoryUrgency(
   }
 
   return result;
+}
+
+/** Result of victory reachability analysis */
+export interface VictoryReachabilityResult {
+  grandStrategy: string;
+  lockedVictory: string;
+  lockReason: string;
+}
+
+/**
+ * Checks whether the current grand strategy targets a victory condition that is still locked.
+ * Returns null when no mismatch is detected (zero cost path).
+ */
+export function analyzeVictoryReachability(
+  victory: VictoryProgressReport | undefined,
+  ledger: Record<string, unknown> | undefined
+): VictoryReachabilityResult | null {
+  if (!victory || !ledger) return null;
+
+  // Extract current grand strategy from ledger's DecisionAudit
+  const audit = ledger.DecisionAudit;
+  if (!Array.isArray(audit) || audit.length === 0) return null;
+
+  const latestDecision = audit[0];
+  const grandStrategy = typeof latestDecision === 'object' && latestDecision !== null
+    ? (latestDecision as Record<string, unknown>).GrandStrategy as string | undefined
+    : undefined;
+  if (!grandStrategy) return null;
+
+  // Map grand strategy names to victory data keys
+  const strategyToVictoryKey: Record<string, string> = {
+    'Science': 'ScienceVictory',
+    'Scientific': 'ScienceVictory',
+    'Culture': 'CulturalVictory',
+    'Cultural': 'CulturalVictory',
+    'Domination': 'DominationVictory',
+    'Military': 'DominationVictory',
+    'Diplomatic': 'DiplomaticVictory',
+    'Diplomacy': 'DiplomaticVictory',
+  };
+
+  const victoryKey = strategyToVictoryKey[grandStrategy];
+  if (!victoryKey) return null;
+
+  const victoryData = (victory as Record<string, unknown>)[victoryKey];
+
+  // If the victory data is a string instead of an object, it means the victory type is locked
+  if (typeof victoryData === 'string') {
+    return {
+      grandStrategy,
+      lockedVictory: victoryKey.replace('Victory', ''),
+      lockReason: victoryData,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Formats a reachability mismatch into a markdown warning section.
+ * Returns empty string when no mismatch exists (zero token cost).
+ */
+export function formatReachabilitySection(result: VictoryReachabilityResult | null): string {
+  if (!result) return '';
+
+  return `# STRATEGY MISALIGNMENT WARNING
+Your grand strategy targets **${result.lockedVictory}** victory, but it is currently unavailable: "${result.lockReason}".
+Consider pivoting to a reachable victory condition or adjusting your long-term plan.
+`;
 }
 
 /**
