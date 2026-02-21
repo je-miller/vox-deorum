@@ -54,9 +54,11 @@ You will receive the following reports:
 ${SimpleStrategistBase.optionsDescriptionPrompt}
 ${SimpleStrategistBase.strategiesDescriptionPrompt}
 ${SimpleStrategistBase.ledgerPrompt}
+${SimpleStrategistBase.retrospectivePrompt}
 ${SimpleStrategistBase.victoryConditionsPrompt}
 ${SimpleStrategistBase.endgameAwarenessPrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
+${SimpleStrategistBase.geopoliticalPrompt}
 - Briefings: prepared by your specialized briefers, covering Military, Economy, and Diplomacy aspects.
   - You will make independent and wise judgment based on all briefings.`.trim()
   }
@@ -149,7 +151,7 @@ ${jsonToMarkdown(Options, {
       }
     }, {
       role: "user",
-      content: `${urgencySection}# Strategies
+      content: `${urgencySection}${state.reports["retrospective"] ? `# Retrospective\n${state.reports["retrospective"]}\n\n` : ''}# Strategies
 Strategies: existing strategic decisions from you.
 
 ${jsonToMarkdown(Strategy)}
@@ -161,7 +163,7 @@ ${state.ledger ? jsonToMarkdown(state.ledger) : 'No ledger yet — initialize yo
 Players: summary reports about visible players in the world.
 
 ${jsonToMarkdown(getStrategicPlayersReport(state.players!))}
-
+${state.geopolitical ? `\n# Geopolitical Summary\nGeopolitical Summary: spatial analysis of your neighbors.\n\n${jsonToMarkdown(state.geopolitical)}\n` : ''}
 # Victory Progress
 Victory Progress: current progress towards each type of victory.
 

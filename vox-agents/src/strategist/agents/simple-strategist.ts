@@ -48,9 +48,11 @@ You will receive the following reports:
 ${SimpleStrategistBase.optionsDescriptionPrompt}
 ${SimpleStrategistBase.strategiesDescriptionPrompt}
 ${SimpleStrategistBase.ledgerPrompt}
+${SimpleStrategistBase.retrospectivePrompt}
 ${SimpleStrategistBase.victoryConditionsPrompt}
 ${SimpleStrategistBase.endgameAwarenessPrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
+${SimpleStrategistBase.geopoliticalPrompt}
 ${SimpleBriefer.citiesPrompt}
 ${SimpleBriefer.militaryPrompt}
 ${SimpleBriefer.eventsPrompt}`.trim()
@@ -93,7 +95,7 @@ ${jsonToMarkdown(Options, {
       }
     }, {
       role: "user",
-      content: `${urgencySection}# Strategies
+      content: `${urgencySection}${state.reports["retrospective"] ? `# Retrospective\n${state.reports["retrospective"]}\n\n` : ''}# Strategies
 Strategies: existing strategic decisions from you.
 
 ${jsonToMarkdown(Strategy)}
@@ -110,7 +112,7 @@ ${jsonToMarkdown(state.victory)}
 Players: summary reports about visible players in the world.
 
 ${jsonToMarkdown(state.players)}
-
+${state.geopolitical ? `\n# Geopolitical Summary\nGeopolitical Summary: spatial analysis of your neighbors.\n\n${jsonToMarkdown(state.geopolitical)}\n` : ''}
 # Cities
 Cities: summary reports about discovered cities in the world.
 

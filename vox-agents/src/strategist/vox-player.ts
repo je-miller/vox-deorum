@@ -13,6 +13,7 @@ import { setTimeout } from 'node:timers/promises';
 import { sqliteExporter, spanProcessor } from "../instrumentation.js";
 import { config } from "../utils/config.js";
 import { ensureGameState, StrategistParameters } from "./strategy-parameters.js";
+import { requestRetrospective } from "../retrospective/retrospective-utils.js";
 import { VoxSpanExporter } from "../utils/telemetry/vox-exporter.js";
 import { PlayerConfig } from "../types/config.js";
 
@@ -55,7 +56,7 @@ export class VoxPlayer {
       before: 0,
       workingMemory: {},
       gameStates: {},
-      mode: playerConfig.strategist === "none-strategist" ? "Strategy" : (playerConfig.mode ? "Flavor" : "Strategy")
+      mode: playerConfig.strategist === "none-strategist" ? "Strategy" : (playerConfig.mode ?? "Strategy")
     };
   }
 
@@ -147,6 +148,8 @@ export class VoxPlayer {
             await context.with(trace.setSpan(context.active(), turnSpan), async () => {
               // Refresh all strategy parameters
               await ensureGameState(this.context, this.parameters)
+              // Run retrospective before strategist (skips on first turn)
+              await requestRetrospective(this.context, this.parameters);
               await this.context.callTool("pause-game", { PlayerID: this.playerID }, this.parameters);
 
               // Without strategists, we just fake one

@@ -20,6 +20,7 @@ import { SimpleStrategistStaffed } from "../strategist/agents/simple-strategist-
 import { KeywordLibrarian } from "../librarian/keyword-librarian.js";
 import { TalkativeTelepathist } from "../telepathist/talkative-telepathist.js";
 import { Summarizer } from "../telepathist/summarizer.js";
+import { Retrospective } from "../retrospective/retrospective.js";
 
 /**
  * Registry for managing available Vox agents.
@@ -175,6 +176,7 @@ class AgentRegistry {
     // Register briefer agents
     this.register(new SimpleBriefer());
     this.register(new SpecializedBriefer());
+    this.register(new Retrospective());
 
     // Register librarian agents
     this.register(new KeywordLibrarian());

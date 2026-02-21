@@ -7,6 +7,7 @@ import type { MilitaryReport } from "../../../mcp-server/dist/tools/knowledge/ge
 import type { OptionsReport } from "../../../mcp-server/dist/tools/knowledge/get-options.js";
 import type { VictoryProgressReport } from "../../../mcp-server/dist/tools/knowledge/get-victory-progress.js";
 import type { StrategicLedgerReport } from "../../../mcp-server/dist/tools/knowledge/get-strategic-ledger.js";
+import type { GeopoliticalSummaryType } from "../../../mcp-server/dist/tools/knowledge/get-geopolitical-summary.js";
 import type { GameMetadata } from "../../../mcp-server/dist/tools/knowledge/get-metadata.js"
 import { StrategyDecisionType } from "../types/config.js";
 import { createLogger } from "../utils/logger.js";
@@ -53,6 +54,8 @@ export interface GameState {
   victory?: VictoryProgressReport;
   /** Strategic ledger for cross-turn memory */
   ledger?: StrategicLedgerReport;
+  /** Geopolitical summary with neighbor distances and terrain analysis */
+  geopolitical?: GeopoliticalSummaryType;
   /** Additional reports (e.g. briefings) */
   reports: Record<string, string>;
   /** Internal: pending briefing generation promises for deduplication (not serialized) */
@@ -96,7 +99,7 @@ export async function refreshGameState(
     await context.callTool("get-metadata", { PlayerID: parameters.playerID }, parameters);
 
   // Get the information
-  const [players, events, cities, options, victory, military, ledger] = await Promise.all([
+  const [players, events, cities, options, victory, military, ledger, geopolitical] = await Promise.all([
     context.callTool("get-players", {}, parameters),
     context.callTool("get-events", {}, parameters),
     context.callTool("get-cities", {}, parameters),
@@ -105,6 +108,10 @@ export async function refreshGameState(
     context.callTool("get-military-report", {}, parameters),
     context.callTool("get-strategic-ledger", { PlayerID: parameters.playerID }, parameters).catch(err => {
       logger.warn('Failed to fetch strategic ledger, continuing without it', { error: err });
+      return undefined;
+    }),
+    context.callTool("get-geopolitical-summary", { PlayerID: parameters.playerID }, parameters).catch(err => {
+      logger.warn('Failed to fetch geopolitical summary, continuing without it', { error: err });
       return undefined;
     }),
   ]);
@@ -126,6 +133,7 @@ export async function refreshGameState(
     military,
     victory,
     ledger: isErrorResult(ledger) ? undefined : ledger,
+    geopolitical: isErrorResult(geopolitical) ? undefined : geopolitical,
     reports: {},
     turn: parameters.turn
   };

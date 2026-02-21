@@ -137,6 +137,21 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
   - You will receive the best available location for your next settlement.`;
 
   /**
+   * Shared prompt: Retrospective resource description
+   */
+  public static readonly retrospectivePrompt = `- Retrospective: a brief assessment of whether your previous strategy is working.
+  - Compares key metrics (score, military, economy, territory) between turns.
+  - Highlights major events and evaluates alignment with your stated strategy.
+  - Available from turn 2 onward.`;
+
+  /**
+   * Shared prompt: Geopolitical Summary resource description
+   */
+  public static readonly geopoliticalPrompt = `- Geopolitical Summary: spatial analysis of your neighbors.
+  - Includes capital-to-capital distances, border terrain percentages, coastal access, and route connectivity.
+  - Use this to reason about invasion routes, natural defenses, and trade accessibility.`;
+
+  /**
    * Gets the list of active tools for this agent
    */
   public getActiveTools(parameters: StrategistParameters): string[] | undefined {

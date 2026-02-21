@@ -33,6 +33,7 @@ import createSearchDatabaseTool from "./general/search-database.js";
 import createGetDiplomaticEventsTool from "./knowledge/get-diplomatic-events.js";
 import createGetStrategicLedgerTool from "./knowledge/get-strategic-ledger.js";
 import createUpdateStrategicLedgerTool from "./actions/update-strategic-ledger.js";
+import createGetGeopoliticalSummaryTool from "./knowledge/get-geopolitical-summary.js";
 
 // Tool factory configuration - one line per tool
 const toolFactories = {
@@ -54,6 +55,7 @@ const toolFactories = {
     getDiplomaticEvents: createGetDiplomaticEventsTool,
     getStrategicLedger: createGetStrategicLedgerTool,
     updateStrategicLedger: createUpdateStrategicLedgerTool,
+    getGeopoliticalSummary: createGetGeopoliticalSummaryTool,
     getPlayers: createGetPlayersTool,
     getOpinions: createGetOpinionsTool,
     getCities: createGetCitiesTool,
