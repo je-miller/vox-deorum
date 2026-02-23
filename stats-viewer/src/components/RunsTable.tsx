@@ -33,7 +33,10 @@ function fmtDate(lastSave: string): string {
   if (!lastSave) return '—';
   const ts = Number(lastSave);
   if (isNaN(ts) || ts === 0) return '—';
-  return new Date(ts).toLocaleDateString();
+  return new Date(ts).toLocaleString(undefined, {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+  });
 }
 
 function fmtNum(n: number): string {

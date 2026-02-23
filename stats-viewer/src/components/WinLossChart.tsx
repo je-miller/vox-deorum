@@ -20,8 +20,8 @@ interface WinLossChartProps {
 }
 
 export default function WinLossChart({ runs }: WinLossChartProps) {
-  const active = runs.filter((r) => !r.notes.excluded);
-  const counts: Record<string, number> = { Win: 0, Loss: 0, Incomplete: 0 };
+  const active = runs.filter((r) => !r.notes.excluded && r.outcome !== 'Incomplete');
+  const counts: Record<string, number> = { Win: 0, Loss: 0 };
   for (const r of active) {
     counts[r.outcome] = (counts[r.outcome] ?? 0) + 1;
   }

@@ -20,7 +20,7 @@ interface DurationTurnsChartProps {
 }
 
 export default function DurationTurnsChart({ runs }: DurationTurnsChartProps) {
-  const active = runs.filter((r) => !r.notes.excluded);
+  const active = runs.filter((r) => !r.notes.excluded && r.outcome !== 'Incomplete');
   const byOutcome: Record<string, { turns: number; tokens: number; gameId: string }[]> = {};
   for (const r of active) {
     if (!byOutcome[r.outcome]) byOutcome[r.outcome] = [];

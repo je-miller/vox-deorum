@@ -1,4 +1,4 @@
-// Bar chart showing input/output token usage per run.
+// Bar chart showing input/output token usage per run, sorted by date.
 
 'use client';
 
@@ -6,6 +6,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 interface Run {
   gameId: string;
+  lastSave: string;
+  outcome: string;
   tokens: { input: number; output: number };
   notes: { excluded: boolean; displayName?: string };
 }
@@ -15,12 +17,15 @@ interface TokenUsageChartProps {
 }
 
 export default function TokenUsageChart({ runs }: TokenUsageChartProps) {
-  const active = runs.filter((r) => !r.notes.excluded && r.tokens.input + r.tokens.output > 0);
-  const data = active.map((r) => ({
-    name: r.notes.displayName ?? r.gameId.slice(0, 8),
-    Input: r.tokens.input,
-    Output: r.tokens.output,
-  }));
+  const active = runs.filter((r) => !r.notes.excluded && r.outcome !== 'Incomplete' && r.tokens.input + r.tokens.output > 0);
+  const data = active
+    .slice()
+    .sort((a, b) => Number(a.lastSave) - Number(b.lastSave))
+    .map((r) => ({
+      name: r.notes.displayName ?? r.gameId.slice(0, 8),
+      Input: r.tokens.input,
+      Output: r.tokens.output,
+    }));
 
   if (data.length === 0) {
     return <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">No token data</div>;
