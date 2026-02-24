@@ -15,6 +15,7 @@ import { VoxSession } from "../infra/vox-session.js";
 import { sessionRegistry } from "../infra/session-registry.js";
 import { StrategistSessionConfig } from "../types/config.js";
 import { SessionStatus } from "../types/api.js";
+import { getModelConfig } from "../utils/models/models.js";
 
 const logger = createLogger('StrategistSession');
 
@@ -247,6 +248,22 @@ export class StrategistSession extends VoxSession<StrategistSessionConfig> {
     }
 
     await mcpClient.callTool("set-metadata", { Key: `experiment`, Value: this.config.name });
+
+    // Store model information from the first player's config
+    const firstPlayerConfig = Object.values(this.config.llmPlayers)[0];
+    if (firstPlayerConfig) {
+      const modelConfig = getModelConfig('default', undefined, firstPlayerConfig.llms);
+      await mcpClient.callTool("set-metadata", { Key: 'modelConfig', Value: `${modelConfig.provider}/${modelConfig.name}` });
+
+      // Retrieve and store model information from LLM API
+      try {
+        await this.storeModelInfo();
+      } catch (error) {
+        logger.warn('Failed to retrieve or store model information:', error);
+        // Continue initialization even if model info fails
+      }      
+    }
+
     await setTimeout(3000);
 
     if (this.config.autoPlay && params.turn === 0) {
@@ -377,4 +394,50 @@ Game.SetAIAutoPlay(2000, -1);`
       return;
     }
   }
+
+    /**
+   * Fetch model information from the LLM API endpoint
+   * Stores the model name in the GameMetadata table
+   * Fails gracefully if the endpoint is not available
+   * TODO: Make this work for all vendors.  Currently it only works for OpenAI compatible urls
+   */ 
+
+  private async storeModelInfo(): Promise<void> {
+    const llmUrl = process.env.OPENAI_COMPATIBLE_URL;
+    const tagsUrl = `${llmUrl}/api/tags`;
+    
+    try {
+      logger.info(`Fetching model information from: ${tagsUrl}`);
+      
+      const response = await fetch(tagsUrl);
+      
+      if (!response.ok) {
+        logger.warn(`Failed to fetch model information: HTTP ${response.status}`);
+        return;
+      }
+      
+      const data = await response.json() as any;
+      
+      // Extract model name from the response
+      // The /api/tags endpoint returns an object with a 'models' array
+      // Each model has a 'name' field
+      if (data && Array.isArray(data.models) && data.models.length > 0) {
+        const modelName = data.models[0].name;
+        if (modelName) {
+          await mcpClient.callTool("set-metadata", { Key: 'modelName', Value: modelName });          
+          logger.info(`Stored model information: ${modelName}`);
+        }
+      } else if (data && data.model) {
+        // Some endpoints return the model directly
+        await mcpClient.callTool("set-metadata", { Key: 'modelName', Value: data.model });
+        logger.info(`Stored model information: ${data.model}`);
+      } else {
+        logger.warn('Model information not found in response');
+      }
+    } catch (error: any) {
+      // Gracefully handle connection errors
+      logger.debug(`Could not fetch model information from ${tagsUrl}: ${error.message}`);
+      // Don't throw - initialization should continue even if model info fails
+    }
+   }
 }
