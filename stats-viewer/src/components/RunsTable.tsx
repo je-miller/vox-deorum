@@ -19,6 +19,9 @@ interface Run {
   tokens: { input: number; output: number; total: number };
   modelName: string | null;
   modelConfig: string | null;
+  gitCommit: string | null;
+  gitBranch: string | null;
+  gitRemote: string | null;
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
 }
 
@@ -119,6 +122,7 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
               <th className="px-3 py-2 text-right font-medium"><SortBtn k="tokens" label="In Tokens" /></th>
               <th className="px-3 py-2 text-right font-medium">Out Tokens</th>
               <th className="px-3 py-2 text-left font-medium">Model</th>
+              <th className="px-3 py-2 text-left font-medium">Git</th>
               <th className="px-3 py-2 text-left font-medium">Tags</th>
               <th className="px-3 py-2 text-center font-medium">Link</th>
             </tr>
@@ -142,7 +146,8 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
                 <td className="px-3 py-2 text-right tabular-nums">{run.turn}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.input)}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.output)}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground"><div>{run.modelName ?? run.notes.llmModel ?? '—'}</div>{run.modelConfig}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">{run.modelName ?? run.modelConfig ?? run.notes.llmModel ?? '—'}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground"><div title={run.gitRemote ?? '—'}>{run.gitCommit ? run.gitCommit.slice(0, 10) : '—'}</div>{run.gitBranch}</td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">
                     {run.notes.tags.map((t) => (

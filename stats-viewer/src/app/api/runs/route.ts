@@ -31,6 +31,9 @@ export function GET() {
         tokens: info.tokens,
         modelName: info.modelName,
         modelConfig: info.modelConfig,
+        gitCommit: info.gitCommit,
+        gitBranch: info.gitBranch,
+        gitRemote: info.gitRemote,
         notes,
       };
     })

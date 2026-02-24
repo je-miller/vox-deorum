@@ -24,6 +24,9 @@ export interface GameMetadata {
   tokens: TokenUsage;
   modelName: string | null;
   modelConfig: string | null;
+  gitCommit: string | null;
+  gitBranch: string | null;
+  gitRemote: string | null;
 }
 
 export interface PlayerInformation {
@@ -122,7 +125,10 @@ export function getGameMetadata(db: Database.Database): GameMetadata {
       total: inputTokens + outputTokens + reasoningTokens,
     },
     modelName: map['modelName'] ?? null,
-    modelConfig: map['modelConfig'] ?? null
+    modelConfig: map['modelConfig'] ?? null,
+    gitCommit: map['gitCommit'] ?? null,
+    gitBranch: map['gitBranch'] ?? null,
+    gitRemote: map['gitRemote'] ?? null,
   };
 }
 
@@ -230,6 +236,9 @@ export interface RunInfo {
   tokens: TokenUsage;
   modelName: string | null;
   modelConfig: string | null;
+  gitCommit: string | null;
+  gitBranch: string | null;
+  gitRemote: string | null;
   outcome: 'Win' | 'Loss' | 'Incomplete';
 }
 
@@ -261,6 +270,9 @@ export function getRunInfo(dbPath: string): RunInfo | null {
       tokens: metadata.tokens,
       modelName: metadata.modelName,
       modelConfig: metadata.modelConfig,
+      gitCommit: metadata.gitCommit,
+      gitBranch: metadata.gitBranch,
+      gitRemote: metadata.gitRemote,
       outcome,
     };
   } finally {
