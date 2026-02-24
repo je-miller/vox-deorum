@@ -29,6 +29,8 @@ export function GET() {
         aiPlayer: info.aiPlayer,
         victoryType: info.victoryType,
         tokens: info.tokens,
+        modelName: info.modelName,
+        modelConfig: info.modelConfig,
         notes,
       };
     })

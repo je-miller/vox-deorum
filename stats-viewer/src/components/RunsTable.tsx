@@ -17,6 +17,8 @@ interface Run {
   aiPlayer: { Civilization: string } | null;
   victoryType: string | null;
   tokens: { input: number; output: number; total: number };
+  modelName: string | null;
+  modelConfig: string | null;
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
 }
 
@@ -140,7 +142,7 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
                 <td className="px-3 py-2 text-right tabular-nums">{run.turn}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.input)}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.output)}</td>
-                <td className="px-3 py-2 text-xs text-muted-foreground">{run.notes.llmModel ?? '—'}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground"><div>{run.modelName ?? run.notes.llmModel ?? '—'}</div>{run.modelConfig}</td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">
                     {run.notes.tags.map((t) => (

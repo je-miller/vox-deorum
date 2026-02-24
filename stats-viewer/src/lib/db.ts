@@ -22,6 +22,8 @@ export interface GameMetadata {
   // PlayerId of the winning player, or null if game is not complete.
   victoryPlayerID: number | null;
   tokens: TokenUsage;
+  modelName: string | null;
+  modelConfig: string | null;
 }
 
 export interface PlayerInformation {
@@ -119,6 +121,8 @@ export function getGameMetadata(db: Database.Database): GameMetadata {
       reasoning: reasoningTokens,
       total: inputTokens + outputTokens + reasoningTokens,
     },
+    modelName: map['modelName'] ?? null,
+    modelConfig: map['modelConfig'] ?? null
   };
 }
 
@@ -224,6 +228,8 @@ export interface RunInfo {
   aiPlayer: PlayerInformation | null;
   victoryType: string | null;
   tokens: TokenUsage;
+  modelName: string | null;
+  modelConfig: string | null;
   outcome: 'Win' | 'Loss' | 'Incomplete';
 }
 
@@ -253,6 +259,8 @@ export function getRunInfo(dbPath: string): RunInfo | null {
       aiPlayer,
       victoryType: metadata.victoryType,
       tokens: metadata.tokens,
+      modelName: metadata.modelName,
+      modelConfig: metadata.modelConfig,
       outcome,
     };
   } finally {
