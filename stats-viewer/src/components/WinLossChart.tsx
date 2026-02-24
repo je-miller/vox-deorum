@@ -41,7 +41,7 @@ export default function WinLossChart({ runs }: WinLossChartProps) {
             <Cell key={entry.name} fill={COLORS[entry.name] ?? '#6b7280'} />
           ))}
         </Pie>
-        <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 6 }} />
+        <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 6 }}  itemStyle={{ color: '#ffffff' }}/>
         <Legend />
       </PieChart>
     </ResponsiveContainer>
