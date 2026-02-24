@@ -7,7 +7,7 @@ import { Kysely, ParseJSONResultsPlugin, SqliteDialect, Selectable, Updateable, 
 import Database from 'better-sqlite3';
 import { createLogger } from '../utils/logger.js';
 import { JsonSerializePlugin } from '../utils/json-serialize-plugin.js';
-import { 
+import {
   MaxMajorCivs,
   type KnowledgeDatabase,
   type MutableKnowledge,
@@ -30,6 +30,7 @@ import { getPlayerSummaries } from './getters/player-summary.js';
 import { getCityInformations } from './getters/city-information.js';
 import { setTimeout } from 'node:timers/promises';
 import PQueue from 'p-queue';
+import { fetch } from 'undici';
 
 const logger = createLogger('KnowledgeStore');
 
@@ -89,6 +90,14 @@ export class KnowledgeStore {
     await this.setMetadata('gameId', gameId);
     await this.setMetadata('lastSync', Date.now().toString());
 
+    // Retrieve and store model information from LLM API
+    try {
+      await this.storeModelInfo();
+    } catch (error) {
+      logger.error('Failed to retrieve or store model information:', error);
+      // Continue initialization even if model info fails
+    }
+
     // Retrieve and store player information as public knowledge
     try {
       await getPlayerInformations();
@@ -132,6 +141,50 @@ export class KnowledgeStore {
       .executeTakeFirst();
 
     return result?.Value;
+  }
+
+  /**
+   * Fetch model information from the LLM API endpoint
+   * Stores the model name in the GameMetadata table
+   * Fails gracefully if the endpoint is not available
+   */
+  private async storeModelInfo(): Promise<void> {
+    const llmUrl = process.env.OPENAI_COMPATIBLE_URL;
+    const tagsUrl = `${llmUrl}/api/tags`;
+    
+    try {
+      logger.info(`Fetching model information from: ${tagsUrl}`);
+      
+      const response = await fetch(tagsUrl);
+      
+      if (!response.ok) {
+        logger.warn(`Failed to fetch model information: HTTP ${response.status}`);
+        return;
+      }
+      
+      const data = await response.json() as any;
+      
+      // Extract model name from the response
+      // The /api/tags endpoint returns an object with a 'models' array
+      // Each model has a 'name' field
+      if (data && Array.isArray(data.models) && data.models.length > 0) {
+        const modelName = data.models[0].name;
+        if (modelName) {
+          await this.setMetadata('model', modelName);
+          logger.info(`Stored model information: ${modelName}`);
+        }
+      } else if (data && data.model) {
+        // Some endpoints return the model directly
+        await this.setMetadata('model', data.model);
+        logger.info(`Stored model information: ${data.model}`);
+      } else {
+        logger.warn('Model information not found in response');
+      }
+    } catch (error: any) {
+      // Gracefully handle connection errors
+      logger.debug(`Could not fetch model information from ${tagsUrl}: ${error.message}`);
+      // Don't throw - initialization should continue even if model info fails
+    }
   }
 
   /**
