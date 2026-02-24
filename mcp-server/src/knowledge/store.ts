@@ -98,6 +98,14 @@ export class KnowledgeStore {
       // Continue initialization even if model info fails
     }
 
+    // Retrieve and store git information
+    try {
+      await this.storeGitInfo();
+    } catch (error) {
+      logger.error('Failed to retrieve or store git information:', error);
+      // Continue initialization even if git info fails
+    }
+
     // Retrieve and store player information as public knowledge
     try {
       await getPlayerInformations();
@@ -185,10 +193,121 @@ export class KnowledgeStore {
       logger.debug(`Could not fetch model information from ${tagsUrl}: ${error.message}`);
       // Don't throw - initialization should continue even if model info fails
     }
-  }
+   }
 
-  /**
-   * Drop all game events with ID greater than the specified ID
+   /**
+    * Store git commit, branch, and tag information in the Metadata table
+    * Fails gracefully if git information cannot be retrieved
+    */
+   private async storeGitInfo(): Promise<void> {
+     try {
+       logger.info('Attempting to store git information');
+       
+       // Get git information from environment variables or git commands
+       const gitInfo = await this.getGitInfo();
+       
+       if (gitInfo.commit) {
+         await this.setMetadata('gitCommit', gitInfo.commit);
+         logger.debug(`Stored git commit: ${gitInfo.commit}`);
+       }
+       
+       if (gitInfo.branch) {
+         await this.setMetadata('gitBranch', gitInfo.branch);
+         logger.debug(`Stored git branch: ${gitInfo.branch}`);
+       }
+       
+       if (gitInfo.tag) {
+         await this.setMetadata('gitTag', gitInfo.tag);
+         logger.debug(`Stored git tag: ${gitInfo.tag}`);
+       }
+       
+       if (gitInfo.remote) {
+         await this.setMetadata('gitRemote', gitInfo.remote);
+         logger.debug(`Stored git remote: ${gitInfo.remote}`);
+       }
+       
+       logger.info('Git information stored successfully');
+     } catch (error: any) {
+       // Gracefully handle errors - git info is optional
+       logger.debug(`Could not fetch or store git information: ${error.message}`);
+       // Don't throw - initialization should continue even if git info fails
+     }
+   }
+   
+   /**
+    * Retrieve git information from environment variables or execute git commands
+    */
+   private async getGitInfo(): Promise<{
+     commit?: string;
+     branch?: string;
+     tag?: string;
+     remote?: string;
+   }> {
+     // First, try to get from environment variables (set by CI/CD or build process)
+     const commit = process.env.GIT_COMMIT || process.env.GIT_COMMIT_SHORT;
+     const branch = process.env.GIT_BRANCH;
+     const tag = process.env.GIT_TAG;
+     const remote = process.env.GIT_REMOTE;
+     
+     if (commit || branch || tag || remote) {
+       logger.debug('Using git information from environment variables');
+       return {
+         commit,
+         branch,
+         tag,
+         remote,
+       };
+     }
+     
+     // Fall back to executing git commands
+     try {
+       const { exec } = await import('child_process');
+       const { promisify } = await import('util');
+       const execAsync = promisify(exec);
+       
+       const info: { commit?: string; branch?: string; tag?: string; remote?: string } = {};
+       
+       // Get current branch
+       try {
+         const { stdout } = await execAsync('git rev-parse --abbrev-ref HEAD', { cwd: process.cwd() });
+         info.branch = stdout.trim();
+       } catch {
+         // Ignore - branch not available
+       }
+       
+       // Get full commit hash
+       try {
+         const { stdout } = await execAsync('git rev-parse HEAD', { cwd: process.cwd() });
+         info.commit = stdout.trim();
+       } catch {
+         // Ignore - commit not available
+       }
+       
+       // Get tag if on a tag
+       try {
+         const { stdout } = await execAsync('git describe --tags --exact-match', { cwd: process.cwd() });
+         info.tag = stdout.trim();
+       } catch {
+         // Ignore - not on a tag
+       }
+       
+       // Get remote URL
+       try {
+         const { stdout } = await execAsync('git remote get-url origin', { cwd: process.cwd() });
+         info.remote = stdout.trim();
+       } catch {
+         // Ignore - remote not available
+       }
+       
+       return info;
+     } catch (error: any) {
+       logger.debug(`Git command execution failed: ${error.message}`);
+       return {};
+     }
+   }
+
+   /**
+    * Drop all game events with ID greater than the specified ID
    * Returns the number of events dropped
    */
   async dropEventsAfterId(id: number): Promise<number> {
