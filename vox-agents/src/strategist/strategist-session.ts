@@ -405,6 +405,7 @@ Game.SetAIAutoPlay(2000, -1);`
   private async storeModelInfo(): Promise<void> {
     const llmUrl = process.env.OPENAI_COMPATIBLE_URL;
     const tagsUrl = `${llmUrl}/api/tags`;
+    const propsUrl = `${llmUrl}/props`;
     
     try {
       logger.info(`Fetching model information from: ${tagsUrl}`);
@@ -424,7 +425,7 @@ Game.SetAIAutoPlay(2000, -1);`
       if (data && Array.isArray(data.models) && data.models.length > 0) {
         const modelName = data.models[0].name;
         if (modelName) {
-          await mcpClient.callTool("set-metadata", { Key: 'modelName', Value: modelName });          
+          await mcpClient.callTool("set-metadata", { Key: 'modelName', Value: modelName });
           logger.info(`Stored model information: ${modelName}`);
         }
       } else if (data && data.model) {
@@ -438,6 +439,27 @@ Game.SetAIAutoPlay(2000, -1);`
       // Gracefully handle connection errors
       logger.debug(`Could not fetch model information from ${tagsUrl}: ${error.message}`);
       // Don't throw - initialization should continue even if model info fails
+    }
+
+    try {
+      logger.info(`Fetching model props from: ${propsUrl}`);
+      
+      const response = await fetch(propsUrl);
+      
+      if (!response.ok) {
+        logger.warn(`Failed to fetch model props: HTTP ${response.status}`);
+        return;
+      }
+      
+      const propsData = await response.json() as any;
+      
+      // Store the props JSON in metadata with a dedicated key
+      await mcpClient.callTool("set-metadata", { Key: 'modelProps', Value: JSON.stringify(propsData) });
+      logger.info(`Stored model props`);
+    } catch (error: any) {
+      // Gracefully handle connection errors
+      logger.debug(`Could not fetch model props from ${propsUrl}: ${error.message}`);
+      // Don't throw - initialization should continue even if props fetch fails
     }
    }
 }
