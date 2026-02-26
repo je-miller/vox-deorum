@@ -46,7 +46,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ game
   const lastSaveDate = metadata.lastSave ? new Date(Number(metadata.lastSave)).toLocaleString() : '—';
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/" className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm">
           <ArrowLeft className="h-4 w-4" /> Dashboard

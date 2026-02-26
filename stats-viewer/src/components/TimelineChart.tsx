@@ -205,75 +205,84 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
         ))}
       </div>
 
-      {/* Chart */}
-      <ResponsiveContainer width="100%" height={400}>
-        <ComposedChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-          <XAxis
-            dataKey="turn"
-            stroke="#71717a"
-            tick={{ fontSize: 11 }}
-            label={{ value: 'Turn', position: 'insideBottomRight', offset: -5, fontSize: 10, fill: '#71717a' }}
-          />
-          <YAxis
-            stroke="#71717a"
-            tick={{ fontSize: 11 }}
-            label={{ value: metricLabels[metric], angle: -90, position: 'insideLeft', fontSize: 10, fill: '#71717a' }}
-          />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
+      {/* Chart + Events side-by-side */}
+      <div className="flex gap-4">
+        {/* Chart — takes remaining space */}
+        <div className="flex-1 min-w-0">
+          <ResponsiveContainer width="100%" height={450}>
+            <ComposedChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis
+                dataKey="turn"
+                stroke="#71717a"
+                tick={{ fontSize: 11 }}
+                label={{ value: 'Turn', position: 'insideBottomRight', offset: -5, fontSize: 10, fill: '#71717a' }}
+              />
+              <YAxis
+                stroke="#71717a"
+                tick={{ fontSize: 11 }}
+                label={{ value: metricLabels[metric], angle: -90, position: 'insideLeft', fontSize: 10, fill: '#71717a' }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Legend />
 
-          {/* Event reference lines */}
-          {eventLines.map(({ turn, category }, i) => (
-            <ReferenceLine
-              key={`ev-${i}`}
-              x={turn}
-              stroke={categoryColors[category]}
-              strokeDasharray="4 4"
-              strokeOpacity={0.5}
-            />
-          ))}
-
-          {/* Player lines */}
-          {sortedPlayers.map((player) => (
-            <Line
-              key={player.playerId}
-              type="monotone"
-              dataKey={`${metricPrefix}_${player.playerId}`}
-              name={`${player.civilization} (${player.leader})`}
-              stroke={playerColorMap[player.playerId]}
-              strokeWidth={player.isAi ? 2.5 : 1.5}
-              strokeDasharray={player.isAi ? undefined : '5 3'}
-              dot={false}
-              connectNulls
-            />
-          ))}
-
-          {needsBrush && (
-            <Brush dataKey="turn" height={20} stroke="#3f3f46" fill="#18181b" />
-          )}
-        </ComposedChart>
-      </ResponsiveContainer>
-
-      {/* Event legend */}
-      {data.events.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs text-muted-foreground font-medium">Events</p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs max-h-32 overflow-y-auto">
-            {data.events.map((ev, i) => (
-              <span key={i} className="flex items-center gap-1.5">
-                <span
-                  className="inline-block w-2 h-2 rounded-full shrink-0"
-                  style={{ background: categoryColors[ev.category] }}
+              {/* Event reference lines */}
+              {eventLines.map(({ turn, category }, i) => (
+                <ReferenceLine
+                  key={`ev-${i}`}
+                  x={turn}
+                  stroke={categoryColors[category]}
+                  strokeDasharray="4 4"
+                  strokeOpacity={0.5}
                 />
-                <span className="text-muted-foreground">T{ev.turn}</span>
-                <span>{ev.label}</span>
-                {ev.detail && <span className="text-muted-foreground">— {ev.detail}</span>}
-              </span>
-            ))}
-          </div>
+              ))}
+
+              {/* Player lines */}
+              {sortedPlayers.map((player) => (
+                <Line
+                  key={player.playerId}
+                  type="monotone"
+                  dataKey={`${metricPrefix}_${player.playerId}`}
+                  name={`${player.civilization} (${player.leader})`}
+                  stroke={playerColorMap[player.playerId]}
+                  strokeWidth={player.isAi ? 2.5 : 1.5}
+                  strokeDasharray={player.isAi ? undefined : '5 3'}
+                  dot={false}
+                  connectNulls
+                />
+              ))}
+
+              {needsBrush && (
+                <Brush dataKey="turn" height={20} stroke="#3f3f46" fill="#18181b" />
+              )}
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
-      )}
+
+        {/* Events list — fixed-width right panel */}
+        {data.events.length > 0 && (
+          <div className="w-64 shrink-0 border-l border-border pl-4">
+            <p className="text-xs text-muted-foreground font-medium mb-2">Events</p>
+            <div className="space-y-1 text-xs max-h-[420px] overflow-y-auto pr-1">
+              {data.events.map((ev, i) => (
+                <div key={i} className="flex items-start gap-1.5 py-0.5">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full shrink-0 mt-1"
+                    style={{ background: categoryColors[ev.category] }}
+                  />
+                  <div className="min-w-0">
+                    <span className="text-muted-foreground">T{ev.turn}</span>{' '}
+                    <span className="font-medium">{ev.label}</span>
+                    {ev.detail && (
+                      <span className="text-muted-foreground"> — {ev.detail}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

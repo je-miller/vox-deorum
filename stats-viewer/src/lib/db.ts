@@ -357,37 +357,71 @@ export function getTimelineSeries(db: Database.Database, majorKeys: number[]): T
   }
 }
 
+// Safely converts a payload value to a display string.
+// Handles nested objects (from localizeObject/explainEnums) by extracting meaningful text.
+function displayVal(val: unknown): string {
+  if (val == null) return '?';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+  if (typeof val === 'object') {
+    // Localized objects may have Description, ShortDescription, or Text fields.
+    const obj = val as Record<string, unknown>;
+    if (typeof obj.ShortDescription === 'string') return obj.ShortDescription;
+    if (typeof obj.Description === 'string') return obj.Description;
+    if (typeof obj.Text === 'string') return obj.Text;
+    // Fall back to first string value found.
+    for (const v of Object.values(obj)) {
+      if (typeof v === 'string' && v.length > 0) return v;
+    }
+  }
+  return '?';
+}
+
 // Parses GameEvents Payload JSON and builds human-readable label and detail strings.
-// Handles event types: DeclareWar, CityCaptureComplete, UnitCityFounded, TeamSetEra,
-// PlayerGoldenAge, PlayerAdoptPolicyBranch, IdeologyAdopted, ReligionFounded, CapitalChanged, PlayerVictory.
-// Returns default type string if payload is null or invalid JSON.
-function buildEventLabel(type: string, payload: string | null): { label: string; detail: string } {
+// Payload fields use Civ5 naming (e.g., OriginatingPlayerID, NewOwnerID) and may contain
+// nested objects from localizeObject/explainEnums processing. Uses displayVal() for safety.
+function buildEventLabel(type: string, payload: string | null, players: PlayerInformation[]): { label: string; detail: string } {
   if (!payload) return { label: type, detail: '' };
   try {
     const p = JSON.parse(payload);
+    // Helper to resolve a player ID to a civilization name.
+    const playerName = (id: unknown): string => {
+      if (id == null) return '?';
+      const numId = typeof id === 'number' ? id : parseInt(String(id), 10);
+      const player = players.find((pl) => pl.Key === numId);
+      return player ? player.Civilization : `Player ${numId}`;
+    };
+    // Helper to resolve a team ID to a civilization name.
+    const teamName = (id: unknown): string => {
+      if (id == null) return '?';
+      const numId = typeof id === 'number' ? id : parseInt(String(id), 10);
+      const player = players.find((pl) => pl.TeamID === numId);
+      return player ? player.Civilization : `Team ${numId}`;
+    };
+
     switch (type) {
       case 'DeclareWar':
-        return { label: 'War Declared', detail: `${p.Attacker ?? '?'} vs ${p.Defender ?? '?'}` };
+        return { label: 'War Declared', detail: `${playerName(p.OriginatingPlayerID)} vs ${teamName(p.TargetTeamID)}` };
       case 'CityCaptureComplete':
-        return { label: 'City Captured', detail: `${p.CityName ?? p.City ?? '?'} by ${p.NewOwner ?? '?'}` };
+        return { label: 'City Captured', detail: `by ${playerName(p.NewOwnerID)} from ${playerName(p.OldOwnerID)}` };
       case 'UnitCityFounded':
-        return { label: 'City Founded', detail: `${p.CityName ?? p.City ?? '?'}` };
+        return { label: 'City Founded', detail: playerName(p.PlayerID) };
       case 'TeamSetEra':
-        return { label: 'New Era', detail: `${p.Era ?? p.EraName ?? '?'}` };
+        return { label: 'New Era', detail: `${displayVal(p.NewEra)} — ${teamName(p.TeamID)}` };
       case 'PlayerGoldenAge':
-        return { label: 'Golden Age', detail: `Player ${p.PlayerId ?? p.Player ?? '?'}` };
+        return { label: 'Golden Age', detail: `${playerName(p.PlayerID)}${p.Starting ? ' begins' : ' ends'}` };
       case 'PlayerAdoptPolicyBranch':
-        return { label: 'Policy Branch', detail: `${p.PolicyBranch ?? p.Branch ?? '?'}` };
+        return { label: 'Policy Branch', detail: `${displayVal(p.BranchType)} — ${playerName(p.PlayerID)}` };
       case 'IdeologyAdopted':
-        return { label: 'Ideology', detail: `${p.Ideology ?? '?'}` };
+        return { label: 'Ideology', detail: `${displayVal(p.BranchType)} — ${playerName(p.PlayerID)}` };
       case 'ReligionFounded':
-        return { label: 'Religion Founded', detail: `${p.Religion ?? p.ReligionName ?? '?'}` };
+        return { label: 'Religion Founded', detail: playerName(p.PlayerID) };
       case 'CapitalChanged':
-        return { label: 'Capital Changed', detail: `${p.NewCapital ?? p.City ?? '?'}` };
+        return { label: 'Capital Changed', detail: playerName(p.PlayerID) };
       case 'PlayerVictory':
-        return { label: 'Victory!', detail: `${p.VictoryType ?? '?'} by Player ${p.PlayerId ?? p.Player ?? '?'}` };
+        return { label: 'Victory!', detail: `${displayVal(p.VictoryType)} — ${playerName(p.PlayerID)}` };
       default:
-        return { label: type, detail: JSON.stringify(p) };
+        return { label: type, detail: '' };
     }
   } catch {
     return { label: type, detail: '' };
@@ -396,16 +430,16 @@ function buildEventLabel(type: string, payload: string | null): { label: string;
 
 // Queries GameEvents table for inflection-point events that matter strategically.
 // Filters by eventCategories map (war, milestone, progression) and parses JSON payloads.
-// Returns categorized events with human-readable labels and details for timeline rendering.
+// Requires players list to resolve player/team IDs to civilization names.
 // Returns empty array if table doesn't exist.
-export function getTimelineEvents(db: Database.Database): TimelineEvent[] {
+export function getTimelineEvents(db: Database.Database, players: PlayerInformation[]): TimelineEvent[] {
   const types = Object.keys(eventCategories);
   const placeholders = types.map(() => '?').join(',');
   const sql = `SELECT Turn, Type, Payload FROM GameEvents WHERE Type IN (${placeholders}) ORDER BY Turn ASC`;
   try {
     const rows = db.prepare(sql).all(...types) as { Turn: number; Type: string; Payload: string | null }[];
     return rows.map((row) => {
-      const { label, detail } = buildEventLabel(row.Type, row.Payload);
+      const { label, detail } = buildEventLabel(row.Type, row.Payload, players);
       return {
         turn: row.Turn,
         type: row.Type,
@@ -436,7 +470,7 @@ export function getTimelineData(db: Database.Database): TimelineData {
   }));
 
   const series = getTimelineSeries(db, majorKeys);
-  const events = getTimelineEvents(db);
+  const events = getTimelineEvents(db, players);
 
   return { players: timelinePlayers, series, events };
 }
