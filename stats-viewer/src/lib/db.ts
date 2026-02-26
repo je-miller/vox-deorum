@@ -280,6 +280,167 @@ export function getRunInfo(dbPath: string): RunInfo | null {
   }
 }
 
+// Timeline types for game progression visualization.
+// Represents game state curves (score, military, science) and inflection-point events (wars, eras, policies).
+
+export interface TimelineDataPoint {
+  turn: number;
+  playerId: number;
+  score: number;
+  militaryStrength: number;
+  sciencePerTurn: number;
+}
+
+export interface TimelineEvent {
+  turn: number;
+  type: string;
+  label: string;
+  detail: string;
+  category: 'war' | 'progression' | 'milestone';
+}
+
+export interface TimelinePlayer {
+  playerId: number;
+  civilization: string;
+  leader: string;
+  isHuman: boolean;
+  isAi: boolean;
+}
+
+// Complete timeline data structure returned by getTimelineData().
+// Used by the /api/runs/{gameId}/timeline route and TimelineChart component.
+export interface TimelineData {
+  players: TimelinePlayer[];
+  series: TimelineDataPoint[];
+  events: TimelineEvent[];
+}
+
+// Event types to include in timeline and their categories.
+const eventCategories: Record<string, 'war' | 'progression' | 'milestone'> = {
+  DeclareWar: 'war',
+  CityCaptureComplete: 'war',
+  UnitCityFounded: 'milestone',
+  TeamSetEra: 'progression',
+  PlayerGoldenAge: 'progression',
+  PlayerAdoptPolicyBranch: 'milestone',
+  IdeologyAdopted: 'milestone',
+  ReligionFounded: 'milestone',
+  CapitalChanged: 'war',
+  PlayerVictory: 'milestone',
+};
+
+// Queries PlayerSummaries for metric curves: Score, MilitaryStrength, SciencePerTurn over all turns.
+// Filters to major players only (IsMajor=1, e.g., human and AI but not city-states).
+// Uses MAX(Version) subquery to select the latest version per turn (respects version history).
+// Returns flat array suitable for component transformation into per-turn objects.
+export function getTimelineSeries(db: Database.Database, majorKeys: number[]): TimelineDataPoint[] {
+  if (majorKeys.length === 0) return [];
+  const placeholders = majorKeys.map(() => '?').join(',');
+  const sql = `
+    SELECT ps.Key AS playerId, ps.Turn AS turn,
+           ps.Score AS score, ps.MilitaryStrength AS militaryStrength,
+           ps.SciencePerTurn AS sciencePerTurn
+    FROM PlayerSummaries ps
+    INNER JOIN (
+      SELECT Turn, Key, MAX(Version) AS MaxVersion
+      FROM PlayerSummaries
+      WHERE Key IN (${placeholders})
+      GROUP BY Turn, Key
+    ) latest ON ps.Turn = latest.Turn AND ps.Key = latest.Key AND ps.Version = latest.MaxVersion
+    WHERE ps.Key IN (${placeholders})
+    ORDER BY ps.Turn ASC, ps.Key ASC
+  `;
+  try {
+    return db.prepare(sql).all(...majorKeys, ...majorKeys) as TimelineDataPoint[];
+  } catch {
+    return [];
+  }
+}
+
+// Parses GameEvents Payload JSON and builds human-readable label and detail strings.
+// Handles event types: DeclareWar, CityCaptureComplete, UnitCityFounded, TeamSetEra,
+// PlayerGoldenAge, PlayerAdoptPolicyBranch, IdeologyAdopted, ReligionFounded, CapitalChanged, PlayerVictory.
+// Returns default type string if payload is null or invalid JSON.
+function buildEventLabel(type: string, payload: string | null): { label: string; detail: string } {
+  if (!payload) return { label: type, detail: '' };
+  try {
+    const p = JSON.parse(payload);
+    switch (type) {
+      case 'DeclareWar':
+        return { label: 'War Declared', detail: `${p.Attacker ?? '?'} vs ${p.Defender ?? '?'}` };
+      case 'CityCaptureComplete':
+        return { label: 'City Captured', detail: `${p.CityName ?? p.City ?? '?'} by ${p.NewOwner ?? '?'}` };
+      case 'UnitCityFounded':
+        return { label: 'City Founded', detail: `${p.CityName ?? p.City ?? '?'}` };
+      case 'TeamSetEra':
+        return { label: 'New Era', detail: `${p.Era ?? p.EraName ?? '?'}` };
+      case 'PlayerGoldenAge':
+        return { label: 'Golden Age', detail: `Player ${p.PlayerId ?? p.Player ?? '?'}` };
+      case 'PlayerAdoptPolicyBranch':
+        return { label: 'Policy Branch', detail: `${p.PolicyBranch ?? p.Branch ?? '?'}` };
+      case 'IdeologyAdopted':
+        return { label: 'Ideology', detail: `${p.Ideology ?? '?'}` };
+      case 'ReligionFounded':
+        return { label: 'Religion Founded', detail: `${p.Religion ?? p.ReligionName ?? '?'}` };
+      case 'CapitalChanged':
+        return { label: 'Capital Changed', detail: `${p.NewCapital ?? p.City ?? '?'}` };
+      case 'PlayerVictory':
+        return { label: 'Victory!', detail: `${p.VictoryType ?? '?'} by Player ${p.PlayerId ?? p.Player ?? '?'}` };
+      default:
+        return { label: type, detail: JSON.stringify(p) };
+    }
+  } catch {
+    return { label: type, detail: '' };
+  }
+}
+
+// Queries GameEvents table for inflection-point events that matter strategically.
+// Filters by eventCategories map (war, milestone, progression) and parses JSON payloads.
+// Returns categorized events with human-readable labels and details for timeline rendering.
+// Returns empty array if table doesn't exist.
+export function getTimelineEvents(db: Database.Database): TimelineEvent[] {
+  const types = Object.keys(eventCategories);
+  const placeholders = types.map(() => '?').join(',');
+  const sql = `SELECT Turn, Type, Payload FROM GameEvents WHERE Type IN (${placeholders}) ORDER BY Turn ASC`;
+  try {
+    const rows = db.prepare(sql).all(...types) as { Turn: number; Type: string; Payload: string | null }[];
+    return rows.map((row) => {
+      const { label, detail } = buildEventLabel(row.Type, row.Payload);
+      return {
+        turn: row.Turn,
+        type: row.Type,
+        label,
+        detail,
+        category: eventCategories[row.Type] ?? 'progression',
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+// Orchestrator function: builds complete TimelineData for a game database.
+// Combines player information, metric series (score/military/science), and events into a single response.
+// Called by /api/runs/{gameId}/timeline route and used by TimelineChart component.
+export function getTimelineData(db: Database.Database): TimelineData {
+  const players = getPlayers(db);
+  const majorPlayers = players.filter((p) => p.IsMajor === 1);
+  const majorKeys = majorPlayers.map((p) => p.Key);
+
+  const timelinePlayers: TimelinePlayer[] = majorPlayers.map((p) => ({
+    playerId: p.Key,
+    civilization: p.Civilization,
+    leader: p.Leader,
+    isHuman: p.IsHuman === 1,
+    isAi: p.IsHuman === 0,
+  }));
+
+  const series = getTimelineSeries(db, majorKeys);
+  const events = getTimelineEvents(db);
+
+  return { players: timelinePlayers, series, events };
+}
+
 export function getRunDetail(dbPath: string) {
   const db = openDb(dbPath);
   if (!db) return null;

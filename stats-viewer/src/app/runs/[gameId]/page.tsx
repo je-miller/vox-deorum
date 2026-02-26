@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import RunNotes from '@/components/RunNotes';
 import LogViewer from '@/components/LogViewer';
+import TimelineChart from '@/components/TimelineChart';
 import VictoryProgressPanel from '@/components/VictoryProgressPanel';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
@@ -77,6 +78,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ game
       <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="victory">Victory</TabsTrigger>
           <TabsTrigger value="decisions">Decisions</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
@@ -116,6 +118,13 @@ export default async function RunDetailPage({ params }: { params: Promise<{ game
                 <div><p className="text-muted-foreground text-xs">Reasoning</p><p className="font-semibold">{tokens.reasoning.toLocaleString()}</p></div>
               </div>
             </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Game Timeline</CardTitle></CardHeader>
+            <CardContent><TimelineChart gameId={gameId} /></CardContent>
           </Card>
         </TabsContent>
 
