@@ -49,8 +49,10 @@ function analyzeDomination(
   const playerData = data[playerName];
   if (!playerData || typeof playerData !== 'object') return null;
 
-  const capitals = playerData.CapitalsHeld ?? playerData.Capitals ?? 0;
-  if (typeof capitals !== 'number' || capitals <= 0) return null;
+  // Lua exports CapitalsControlled as an array of city name strings
+  const rawCapitals = playerData.CapitalsControlled ?? playerData.CapitalsHeld ?? playerData.Capitals;
+  const capitals = Array.isArray(rawCapitals) ? rawCapitals.length : (typeof rawCapitals === 'number' ? rawCapitals : 0);
+  if (capitals <= 0) return null;
 
   const ratio = capitals / capitalsNeeded;
 
@@ -74,8 +76,9 @@ function analyzeScience(
   const playerData = data[playerName];
   if (!playerData || typeof playerData !== 'object') return null;
 
-  const parts = playerData.SpaceshipParts ?? playerData.Parts ?? 0;
-  const hasApollo = playerData.HasApolloProgram ?? playerData.Apollo ?? false;
+  // Lua exports PartsCompleted (int) and ApolloComplete (int 0/1+)
+  const parts = playerData.PartsCompleted ?? playerData.SpaceshipParts ?? playerData.Parts ?? 0;
+  const hasApollo = (playerData.ApolloComplete ?? 0) > 0 || playerData.HasApolloProgram || playerData.Apollo || false;
   if (!hasApollo && parts === 0) return null;
 
   if (parts >= 5) {
@@ -125,7 +128,8 @@ function analyzeDiplomatic(
   const playerData = data[playerName];
   if (!playerData || typeof playerData !== 'object') return null;
 
-  const votes = playerData.Votes ?? playerData.Delegates ?? 0;
+  // Lua exports Delegates (int)
+  const votes = playerData.Delegates ?? playerData.Votes ?? 0;
   if (typeof votes !== 'number' || votes <= 0) return null;
 
   const ratio = votes / votesNeeded;

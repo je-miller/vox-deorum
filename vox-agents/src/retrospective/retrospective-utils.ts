@@ -137,12 +137,16 @@ ${majorEvents.join('\n')}`);
 
 /**
  * Finds a player's summary from the players report by playerID.
+ * The get-players tool returns an object keyed by player index string (e.g., {"0": {...}, "1": {...}}).
  */
 function findPlayerSummary(players: any, playerID: number): any | undefined {
   if (Array.isArray(players)) {
     return players.find((p: any) => p.Key === playerID);
   }
-  // Handle object format keyed by player name
+  // Try direct index lookup (get-players returns object keyed by player index)
+  if (players[playerID] !== undefined) return players[playerID];
+  if (players[String(playerID)] !== undefined) return players[String(playerID)];
+  // Fall back to searching by Key property
   for (const key in players) {
     const p = players[key];
     if (p?.Key === playerID) return p;
