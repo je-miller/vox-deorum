@@ -199,6 +199,17 @@ export interface RelationshipChange extends TimedKnowledge {
 }
 
 /**
+ * Direct diplomatic action records for AI players
+ * Tracks discrete diplomatic events (war, peace, denounce, friendship)
+ */
+export interface DiplomaticAction extends TimedKnowledge {
+  PlayerID: number; // The player performing the action
+  TargetID: number; // The target of the diplomatic action
+  Action: string; // "DeclareWar" | "MakePeace" | "Denounce" | "DeclareFriendship"
+  Rationale: string; // Explanation for the action
+}
+
+/**
  * AI Flavor values for major civilizations
  * Visible only to the player themselves (like strategy data)
  * Tracks custom flavor overrides for AI decision-making

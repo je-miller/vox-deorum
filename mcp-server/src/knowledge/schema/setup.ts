@@ -83,6 +83,16 @@ export async function setupKnowledgeDatabase(
     .ifNotExists()
     .execute();
 
+  // Create DiplomaticActions table (TimedKnowledge implementation)
+  await createTimedKnowledgeTable(db, 'DiplomaticActions')
+    .addColumn('PlayerID', 'integer', (col) => col.notNull())
+    .addColumn('TargetID', 'integer', (col) => col.notNull())
+    .addColumn('Action', 'text', (col) => col.notNull())
+    .addColumn('Rationale', 'text', (col) => col.notNull())
+    .execute();
+  // Create indexes for DiplomaticActions table
+  await createTimedKnowledgeIndexes(db, 'DiplomaticActions', 'PlayerID');
+
   // Create PlayerOptions table (TimedKnowledge implementation)
   await createTimedKnowledgeTable(db, 'PlayerOptions')
     .addColumn('PlayerID', 'integer', (col) => col.notNull()) // Player ID

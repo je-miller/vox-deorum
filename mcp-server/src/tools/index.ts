@@ -34,6 +34,10 @@ import createGetDiplomaticEventsTool from "./knowledge/get-diplomatic-events.js"
 import createGetStrategicLedgerTool from "./knowledge/get-strategic-ledger.js";
 import createUpdateStrategicLedgerTool from "./actions/update-strategic-ledger.js";
 import createGetGeopoliticalSummaryTool from "./knowledge/get-geopolitical-summary.js";
+import createDeclareWarTool from "./actions/declare-war.js";
+import createMakePeaceTool from "./actions/make-peace.js";
+import createDenounceTool from "./actions/denounce.js";
+import createDeclareFriendshipTool from "./actions/declare-friendship.js";
 
 // Tool factory configuration - one line per tool
 const toolFactories = {
@@ -69,6 +73,10 @@ const toolFactories = {
     unsetFlavors: createUnsetFlavorsTool,
     setResearch: createSetResearchTool,
     setPolicy: createSetPolicyTool,
+    declareWar: createDeclareWarTool,
+    makePeace: createMakePeaceTool,
+    denounce: createDenounceTool,
+    declareFriendship: createDeclareFriendshipTool,
     keepStatusQuo: createKeepStatusQuoTool,
     relayMessage: createRelayMessageTool,
     pauseGame: createPauseGameTool,
