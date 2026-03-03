@@ -140,6 +140,16 @@ export function getPlayers(db: Database.Database): PlayerInformation[] {
   }
 }
 
+// IsLLMPlayer returns true if the player is controlled by an LLM (AI).
+// In the database, LLM players have IsHuman = 0. In most cases, however there must be a bug that allows all players to be IsHuman = 0. Using Key instead.
+export function IsLLMPlayer(p: PlayerInformation): boolean {
+  if (p.IsHuman === 1) {
+    return false;
+  }
+  return p.Key === 1;
+  // return p.IsHuman === 0;
+}
+
 // Detects the winner from VictoryProgress — used only on the detail page.
 // A non-null Contender field in a JSON victory column means that civ won.
 export function getVictoryResult(db: Database.Database): VictoryResult {
@@ -251,13 +261,13 @@ export function getRunInfo(dbPath: string): RunInfo | null {
     const players = getPlayers(db);
 
     // Vox Deorum controls the AI player (IsHuman = 0).
-    const aiPlayer = players.find((p) => p.IsHuman === 0) ?? null;
+    const aiPlayer = players.find((p) => IsLLMPlayer(p)) ?? null;
 
     let outcome: 'Win' | 'Loss' | 'Incomplete' = 'Incomplete';
     if (metadata.victoryType && metadata.victoryPlayerID !== null) {
       const winnerPlayer = players.find((p) => p.Key === metadata.victoryPlayerID);
       // Win if the victorious player is the AI (not human-controlled).
-      outcome = winnerPlayer && winnerPlayer.IsHuman === 0 ? 'Win' : 'Loss';
+      outcome = winnerPlayer && IsLLMPlayer(winnerPlayer) ? 'Win' : 'Loss';
     }
 
     return {
@@ -465,8 +475,8 @@ export function getTimelineData(db: Database.Database): TimelineData {
     playerId: p.Key,
     civilization: p.Civilization,
     leader: p.Leader,
-    isHuman: p.IsHuman === 1,
-    isAi: p.IsHuman === 0,
+    isHuman: !IsLLMPlayer(p),
+    isAi: IsLLMPlayer(p),
   }));
 
   const series = getTimelineSeries(db, majorKeys);
@@ -481,7 +491,7 @@ export function getRunDetail(dbPath: string) {
   try {
     const metadata = getGameMetadata(db);
     const players = getPlayers(db);
-    const aiPlayer = players.find((p) => p.IsHuman === 0) ?? null;
+    const aiPlayer = players.find((p) => IsLLMPlayer(p)) ?? null;
     const victoryResult = getVictoryResult(db);
     const victoryProgress = getVictoryProgress(db);
     const aiSummary = aiPlayer ? getAiPlayerSummary(db, aiPlayer.Key) : null;
@@ -491,7 +501,7 @@ export function getRunDetail(dbPath: string) {
     let outcome: 'Win' | 'Loss' | 'Incomplete' = 'Incomplete';
     if (metadata.victoryType && metadata.victoryPlayerID !== null) {
       const winnerPlayer = players.find((p) => p.Key === metadata.victoryPlayerID);
-      outcome = winnerPlayer && winnerPlayer.IsHuman === 0 ? 'Win' : 'Loss';
+      outcome = winnerPlayer && IsLLMPlayer(winnerPlayer) ? 'Win' : 'Loss';
     }
 
     return {
