@@ -149,7 +149,11 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
                 key={run.gameId}
                 className={`border-b border-border hover:bg-muted/20 transition-colors ${run.notes.excluded ? 'opacity-40' : ''}`}
               >
-                <td className="px-3 py-2 font-mono text-xs">{run.notes.displayName ?? run.gameId.slice(0, 12)}</td>
+                <td className="px-3 py-2 font-mono text-xs">
+                  <Link href={`/runs/${encodeURIComponent(run.gameId)}`} className="hover:underline text-blue-400 hover:text-blue-300">
+                    {run.notes.displayName ?? run.gameId.slice(0, 12)}
+                  </Link>
+                </td>
                 <td className="px-3 py-2 text-muted-foreground">{fmtDate(run.lastSave)}</td>
                 <td className="px-3 py-2">
                   <Badge variant={outcomeVariant[run.outcome] ?? 'secondary'}>{run.outcome}</Badge>
