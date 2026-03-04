@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, Brush, Legend,
@@ -97,6 +97,8 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
   const [data, setData] = useState<TimelineData | null>(null);
   const [loading, setLoading] = useState(true);
   const [metric, setMetric] = useState<Metric>('score');
+  const [highlightedTurn, setHighlightedTurn] = useState<number | null>(null);
+  const eventRefsMap = useRef<Map<number, HTMLDivElement>>(new Map());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,6 +126,24 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
   const eventLines = useMemo(() => {
     if (!data) return [];
     return uniqueEventTurns(data.events);
+  }, [data]);
+
+  // Finds the nearest event to the clicked turn and scrolls it into view.
+  const handleChartClick = useCallback((chartData: any) => {
+    if (!chartData?.activeLabel || !data?.events.length) return;
+    const turn = chartData.activeLabel as number;
+
+    // Find the event closest to the clicked turn.
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for (let i = 0; i < data.events.length; i++) {
+      const d = Math.abs(data.events[i].turn - turn);
+      if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+
+    const target = data.events[bestIdx];
+    setHighlightedTurn(target.turn);
+    eventRefsMap.current.get(bestIdx)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [data]);
 
   // Loading skeleton
@@ -210,7 +230,7 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
         {/* Chart — takes remaining space */}
         <div className="flex-1 min-w-0">
           <ResponsiveContainer width="100%" height={450}>
-            <ComposedChart data={chartData}>
+            <ComposedChart data={chartData} onClick={handleChartClick} style={{ cursor: 'pointer' }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
               <XAxis
                 dataKey="turn"
@@ -265,7 +285,13 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
             <p className="text-xs text-muted-foreground font-medium mb-2">Events</p>
             <div className="space-y-1 text-xs max-h-[420px] overflow-y-auto pr-1">
               {data.events.map((ev, i) => (
-                <div key={i} className="flex items-start gap-1.5 py-0.5">
+                <div
+                  key={i}
+                  ref={(el) => { if (el) eventRefsMap.current.set(i, el); else eventRefsMap.current.delete(i); }}
+                  className={`flex items-start gap-1.5 py-0.5 px-1 rounded transition-colors duration-300 ${
+                    highlightedTurn === ev.turn ? 'bg-white/10' : ''
+                  }`}
+                >
                   <span
                     className="inline-block w-2 h-2 rounded-full shrink-0 mt-1"
                     style={{ background: categoryColors[ev.category] }}
