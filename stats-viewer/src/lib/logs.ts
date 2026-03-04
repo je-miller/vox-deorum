@@ -41,8 +41,9 @@ function matchesGameId(line: LogEntry, gameId: string): boolean {
   );
 }
 
-// Synchronously reads and parses log files, collecting stats for a gameId.
-export async function getRunLogStats(logsDir: string, gameId: string): Promise<RunLogStats> {
+// Reads and parses log files, collecting stats for a gameId.
+// Kept for reference — the route now uses the faster telemetry-based getRunLogStats instead.
+export async function getRunLogStatsFromLogs(logsDir: string, gameId: string): Promise<RunLogStats> {
   const files = findLogFiles(logsDir);
   let minTime: number | null = null;
   let maxTime: number | null = null;

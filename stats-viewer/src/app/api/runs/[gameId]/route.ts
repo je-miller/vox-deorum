@@ -1,9 +1,10 @@
 // API route for fetching full detail for a single run.
+// Token counts come from GameMetadata (already read by getRunDetail).
+// Run stats (duration, errors) come from the telemetry spans table.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { findGameDbs, getRunDetail } from '@/lib/db';
-import { getTotalTokens } from '@/lib/telemetry';
-import { getRunLogStats } from '@/lib/logs';
+import { getRunLogStats } from '@/lib/telemetry';
 import { getNotes } from '@/lib/notes';
 import { getConfig } from '@/lib/config';
 import path from 'path';
@@ -37,12 +38,11 @@ export async function GET(
     return NextResponse.json({ error: 'Failed to read DB' }, { status: 500 });
   }
 
-  console.time(`${prefix} getTotalTokens`);
-  const tokens = getTotalTokens(config.telemetryDir, gameId);
-  console.timeEnd(`${prefix} getTotalTokens`);
+  // Token counts are already in detail.metadata.tokens (from GameMetadata table)
+  const tokens = detail.metadata.tokens;
 
   console.time(`${prefix} getRunLogStats`);
-  const logStats = await getRunLogStats(config.logsDir, gameId);
+  const logStats = getRunLogStats(config.telemetryDir, gameId);
   console.timeEnd(`${prefix} getRunLogStats`);
 
   console.time(`${prefix} getNotes`);

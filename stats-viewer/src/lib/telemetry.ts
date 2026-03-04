@@ -1,4 +1,4 @@
-// Telemetry database queries for token usage per run.
+// Telemetry database queries for token usage and run stats.
 // Reads {gameId}-player-{N}.db files from the telemetry directory.
 
 import Database from 'better-sqlite3';
@@ -10,6 +10,13 @@ export interface TokenUsage {
   output: number;
   reasoning: number;
   total: number;
+}
+
+export interface RunLogStats {
+  startTime: string | null;
+  endTime: string | null;
+  durationMs: number;
+  errorCount: number;
 }
 
 // Finds all telemetry DB files matching a gameId.
@@ -77,4 +84,68 @@ export function getTotalTokens(telemetryDir: string, gameId: string): TokenUsage
     total.total += usage.total;
   }
   return total;
+}
+
+// Extracts run duration and error count from a single telemetry DB's spans table.
+// Duration: MIN/MAX of startTime. Errors: rows where statusCode == 2.
+function getStatsFromDb(dbPath: string): RunLogStats {
+  let db: Database.Database | null = null;
+  try {
+    db = new Database(dbPath, { readonly: true });
+
+    const timeRow = db.prepare(
+      'SELECT MIN(startTime) AS minT, MAX(startTime) AS maxT FROM spans'
+    ).get() as { minT: number | null; maxT: number | null } | undefined;
+
+    const errorRow = db.prepare(
+      'SELECT COUNT(*) AS cnt FROM spans WHERE statusCode = 2'
+    ).get() as { cnt: number } | undefined;
+
+    const minT = timeRow?.minT ?? null;
+    const maxT = timeRow?.maxT ?? null;
+
+    // startTime is stored as nanosecond Unix timestamp
+    const minMs = minT !== null ? minT / 1e6 : null;
+    const maxMs = maxT !== null ? maxT / 1e6 : null;
+
+    return {
+      startTime: minMs !== null ? new Date(minMs).toISOString() : null,
+      endTime: maxMs !== null ? new Date(maxMs).toISOString() : null,
+      durationMs: minMs !== null && maxMs !== null ? maxMs - minMs : 0,
+      errorCount: errorRow?.cnt ?? 0,
+    };
+  } catch {
+    return { startTime: null, endTime: null, durationMs: 0, errorCount: 0 };
+  } finally {
+    db?.close();
+  }
+}
+
+// Aggregates run stats across all telemetry files for a gameId.
+// Uses the spans table for duration (MIN/MAX startTime) and errors (statusCode == 2).
+export function getRunLogStats(telemetryDir: string, gameId: string): RunLogStats {
+  const files = findTelemetryFiles(telemetryDir, gameId);
+  let minMs: number | null = null;
+  let maxMs: number | null = null;
+  let errorCount = 0;
+
+  for (const file of files) {
+    const stats = getStatsFromDb(file);
+    if (stats.startTime) {
+      const t = new Date(stats.startTime).getTime();
+      if (minMs === null || t < minMs) minMs = t;
+    }
+    if (stats.endTime) {
+      const t = new Date(stats.endTime).getTime();
+      if (maxMs === null || t > maxMs) maxMs = t;
+    }
+    errorCount += stats.errorCount;
+  }
+
+  return {
+    startTime: minMs !== null ? new Date(minMs).toISOString() : null,
+    endTime: maxMs !== null ? new Date(maxMs).toISOString() : null,
+    durationMs: minMs !== null && maxMs !== null ? maxMs - minMs : 0,
+    errorCount,
+  };
 }
