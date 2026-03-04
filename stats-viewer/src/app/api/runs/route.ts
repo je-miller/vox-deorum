@@ -4,6 +4,7 @@
 import { NextResponse } from 'next/server';
 import { findGameDbs, getRunInfo } from '@/lib/db';
 import { getAllNotes } from '@/lib/notes';
+import { getRunLogStats } from '@/lib/telemetry';
 import { getConfig } from '@/lib/config';
 import path from 'path';
 
@@ -19,6 +20,9 @@ export function GET() {
 
       const gameId = info.gameId || path.basename(dbPath, '.db');
       const notes = allNotes[gameId] ?? { tags: [], notes: '', excluded: false };
+      const logStats = config.telemetryDir
+        ? getRunLogStats(config.telemetryDir, gameId)
+        : { durationMs: 0, errorCount: 0 };
 
       return {
         gameId,
@@ -29,6 +33,8 @@ export function GET() {
         aiPlayer: info.aiPlayer,
         victoryType: info.victoryType,
         tokens: info.tokens,
+        durationMs: logStats.durationMs,
+        errorCount: logStats.errorCount,
         modelName: info.modelName,
         modelConfig: info.modelConfig,
         gitCommit: info.gitCommit,
