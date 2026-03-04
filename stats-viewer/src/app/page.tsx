@@ -1,11 +1,6 @@
-// Dashboard page: summary cards, charts, and runs table.
+// Dashboard page: fetches runs server-side and delegates to the Dashboard client component.
 
-import SummaryCards from '@/components/SummaryCards';
-import WinLossChart from '@/components/WinLossChart';
-import DurationTurnsChart from '@/components/DurationTurnsChart';
-import TokenUsageChart from '@/components/TokenUsageChart';
-import RunsTable from '@/components/RunsTable';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Dashboard from '@/components/Dashboard';
 
 async function getRuns() {
   try {
@@ -21,34 +16,5 @@ async function getRuns() {
 export default async function DashboardPage() {
   const runs = await getRuns();
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Vox Deorum AI run analytics</p>
-      </div>
-
-      <SummaryCards runs={runs} />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Win / Loss</CardTitle></CardHeader>
-          <CardContent><WinLossChart runs={runs} /></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Turns vs Tokens</CardTitle></CardHeader>
-          <CardContent><DurationTurnsChart runs={runs} /></CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-sm font-medium">Token Usage</CardTitle></CardHeader>
-          <CardContent><TokenUsageChart runs={runs} /></CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle className="text-base font-medium">All Runs</CardTitle></CardHeader>
-        <CardContent><RunsTable runs={runs} /></CardContent>
-      </Card>
-    </div>
-  );
+  return <Dashboard runs={runs} />;
 }

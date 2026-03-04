@@ -9,7 +9,7 @@ interface Run {
   lastSave: string;
   outcome: string;
   tokens: { input: number; output: number };
-  notes: { excluded: boolean; displayName?: string };
+  notes: { displayName?: string };
 }
 
 interface TokenUsageChartProps {
@@ -17,7 +17,7 @@ interface TokenUsageChartProps {
 }
 
 export default function TokenUsageChart({ runs }: TokenUsageChartProps) {
-  const active = runs.filter((r) => !r.notes.excluded && r.outcome !== 'Incomplete' && r.tokens.input + r.tokens.output > 0);
+  const active = runs.filter((r) => r.outcome !== 'Incomplete' && r.tokens.input + r.tokens.output > 0);
   const data = active
     .slice()
     .sort((a, b) => Number(a.lastSave) - Number(b.lastSave))

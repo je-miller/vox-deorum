@@ -6,7 +6,6 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ArrowUpDown, ExternalLink } from 'lucide-react';
 
 interface Run {
@@ -58,31 +57,17 @@ function fmtNum(n: number): string {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
 }
 
-export default function RunsTable({ runs }: { runs: Run[] }) {
-  const [search, setSearch] = useState('');
+export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCount: number }) {
   const [sort, setSort] = useState<SortKey>('lastSave');
   const [asc, setAsc] = useState(false);
-  const [showExcluded, setShowExcluded] = useState(true);
 
   const toggleSort = (key: SortKey) => {
     if (sort === key) setAsc(!asc);
     else { setSort(key); setAsc(false); }
   };
 
-  const filtered = useMemo(() => {
-    let list = runs;
-    if (!showExcluded) list = list.filter((r) => !r.notes.excluded);
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter((r) =>
-        r.gameId.toLowerCase().includes(q) ||
-        r.notes.displayName?.toLowerCase().includes(q) ||
-        r.notes.llmModel?.toLowerCase().includes(q) ||
-        r.notes.tags.some((t) => t.toLowerCase().includes(q)) ||
-        r.outcome.toLowerCase().includes(q)
-      );
-    }
-    return [...list].sort((a, b) => {
+  const sorted = useMemo(() => {
+    return [...runs].sort((a, b) => {
       let va: number | string = 0;
       let vb: number | string = 0;
       if (sort === 'lastSave') { va = Number(a.lastSave); vb = Number(b.lastSave); }
@@ -95,7 +80,7 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
       if (va > vb) return asc ? 1 : -1;
       return 0;
     });
-  }, [runs, search, sort, asc, showExcluded]);
+  }, [runs, sort, asc]);
 
   const SortBtn = ({ k, label }: { k: SortKey; label: string }) => (
     <button
@@ -108,18 +93,6 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex gap-3 items-center">
-        <Input
-          placeholder="Search runs…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
-        />
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-          <input type="checkbox" checked={showExcluded} onChange={(e) => setShowExcluded(e.target.checked)} />
-          Show excluded
-        </label>
-      </div>
       <div className="rounded-md border border-border overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -141,10 +114,10 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && (
+            {sorted.length === 0 && (
               <tr><td colSpan={14} className="text-center py-8 text-muted-foreground">No runs found</td></tr>
             )}
-            {filtered.map((run) => (
+            {sorted.map((run) => (
               <tr
                 key={run.gameId}
                 className={`border-b border-border hover:bg-muted/20 transition-colors ${run.notes.excluded ? 'opacity-40' : ''}`}
@@ -188,7 +161,7 @@ export default function RunsTable({ runs }: { runs: Run[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">{filtered.length} of {runs.length} runs</p>
+      <p className="text-xs text-muted-foreground">{runs.length} of {totalCount} runs</p>
     </div>
   );
 }
