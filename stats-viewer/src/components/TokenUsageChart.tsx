@@ -22,6 +22,7 @@ export default function TokenUsageChart({ runs }: TokenUsageChartProps) {
     .slice()
     .sort((a, b) => Number(a.lastSave) - Number(b.lastSave))
     .map((r) => ({
+      date: new Date(Number(r.lastSave)).toLocaleDateString(),
       name: r.notes.displayName ?? r.gameId.slice(0, 8),
       Input: r.tokens.input,
       Output: r.tokens.output,
@@ -35,9 +36,9 @@ export default function TokenUsageChart({ runs }: TokenUsageChartProps) {
     <ResponsiveContainer width="100%" height={220}>
       <BarChart data={data}>
         <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-        <XAxis dataKey="name" stroke="#71717a" tick={{ fontSize: 10 }} />
+        <XAxis dataKey="date" stroke="#71717a" tick={{ fontSize: 10 }} label={undefined} />
         <YAxis stroke="#71717a" tick={{ fontSize: 10 }} />
-        <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 6 }} />
+        <Tooltip contentStyle={{ background: '#18181b', border: '1px solid #3f3f46', borderRadius: 6 }} labelFormatter={(label, payload) => `${payload?.[0]?.payload?.name ?? ''} — ${label}`} />
         <Legend />
         <Bar dataKey="Input" fill="#3b82f6" />
         <Bar dataKey="Output" fill="#8b5cf6" />
