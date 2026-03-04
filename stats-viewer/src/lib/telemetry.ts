@@ -19,6 +19,13 @@ export interface RunLogStats {
   errorCount: number;
 }
 
+export interface ErrorSpan {
+  name: string;
+  timestamp: string;
+  statusMessage: string;
+  attributes: Record<string, unknown> | null;
+}
+
 // Finds all telemetry DB files matching a gameId.
 export function findTelemetryFiles(telemetryDir: string, gameId: string): string[] {
   if (!fs.existsSync(telemetryDir)) return [];
@@ -119,6 +126,45 @@ function getStatsFromDb(dbPath: string): RunLogStats {
   } finally {
     db?.close();
   }
+}
+
+// Extracts error spans (statusCode == 2) from a single telemetry DB.
+function getErrorsFromDb(dbPath: string): ErrorSpan[] {
+  let db: Database.Database | null = null;
+  try {
+    db = new Database(dbPath, { readonly: true });
+    const rows = db.prepare(
+      'SELECT name, startTime, statusMessage, attributes FROM spans WHERE statusCode = 2 ORDER BY startTime DESC'
+    ).all() as { name: string; startTime: number; statusMessage: string | null; attributes: string | null }[];
+
+    return rows.map(row => {
+      let attrs: Record<string, unknown> | null = null;
+      if (row.attributes) {
+        try { attrs = JSON.parse(row.attributes); } catch { /* invalid JSON */ }
+      }
+      return {
+        name: row.name,
+        timestamp: new Date(row.startTime / 1e6).toISOString(),
+        statusMessage: row.statusMessage ?? '',
+        attributes: attrs,
+      };
+    });
+  } catch {
+    return [];
+  } finally {
+    db?.close();
+  }
+}
+
+// Aggregates error spans across all telemetry files for a gameId, sorted by timestamp desc.
+export function getErrorSpans(telemetryDir: string, gameId: string): ErrorSpan[] {
+  const files = findTelemetryFiles(telemetryDir, gameId);
+  const allErrors: ErrorSpan[] = [];
+  for (const file of files) {
+    allErrors.push(...getErrorsFromDb(file));
+  }
+  allErrors.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  return allErrors;
 }
 
 // Aggregates run stats across all telemetry files for a gameId.

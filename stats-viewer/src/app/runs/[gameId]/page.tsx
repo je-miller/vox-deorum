@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import RunNotes from '@/components/RunNotes';
 import LogViewer from '@/components/LogViewer';
+import ErrorViewer from '@/components/ErrorViewer';
 import TimelineChart from '@/components/TimelineChart';
 import VictoryProgressPanel from '@/components/VictoryProgressPanel';
 import Link from 'next/link';
@@ -82,6 +83,7 @@ export default async function RunDetailPage({ params }: { params: Promise<{ game
           <TabsTrigger value="victory">Victory</TabsTrigger>
           <TabsTrigger value="decisions">Decisions</TabsTrigger>
           <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="errors">Errors</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
 
@@ -182,6 +184,13 @@ export default async function RunDetailPage({ params }: { params: Promise<{ game
           <Card>
             <CardHeader><CardTitle className="text-sm">Log Entries</CardTitle></CardHeader>
             <CardContent><LogViewer gameId={gameId} /></CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="errors" className="mt-4">
+          <Card>
+            <CardHeader><CardTitle className="text-sm">Error Spans</CardTitle></CardHeader>
+            <CardContent><ErrorViewer gameId={gameId} /></CardContent>
           </Card>
         </TabsContent>
 
