@@ -9,6 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await params;
+  const prefix = `[runs/${gameId}/logs]`;
+  console.time(`${prefix} total`);
+
   const config = getConfig();
   const { searchParams } = req.nextUrl;
 
@@ -17,6 +20,10 @@ export async function GET(
   const limit = parseInt(searchParams.get('limit') ?? '500', 10);
   const offset = parseInt(searchParams.get('offset') ?? '0', 10);
 
+  console.time(`${prefix} getRunLogs`);
   const logs = await getRunLogs(config.logsDir, gameId, { level, search, limit, offset });
+  console.timeEnd(`${prefix} getRunLogs`);
+
+  console.timeEnd(`${prefix} total`);
   return NextResponse.json(logs);
 }

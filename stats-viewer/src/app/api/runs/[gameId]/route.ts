@@ -13,19 +13,42 @@ export async function GET(
   { params }: { params: Promise<{ gameId: string }> }
 ) {
   const { gameId } = await params;
+  const prefix = `[runs/${gameId}]`;
+  console.time(`${prefix} total`);
+
   const config = getConfig();
+
+  console.time(`${prefix} findGameDbs`);
   const dbFiles = findGameDbs(config.dbDir);
+  console.timeEnd(`${prefix} findGameDbs`);
 
   // Find the DB file matching this gameId (by filename or internal gameId)
   let dbPath = dbFiles.find((f) => path.basename(f, '.db') === gameId);
-  if (!dbPath) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!dbPath) {
+    console.timeEnd(`${prefix} total`);
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
+  console.time(`${prefix} getRunDetail`);
   const detail = getRunDetail(dbPath);
-  if (!detail) return NextResponse.json({ error: 'Failed to read DB' }, { status: 500 });
+  console.timeEnd(`${prefix} getRunDetail`);
+  if (!detail) {
+    console.timeEnd(`${prefix} total`);
+    return NextResponse.json({ error: 'Failed to read DB' }, { status: 500 });
+  }
 
+  console.time(`${prefix} getTotalTokens`);
   const tokens = getTotalTokens(config.telemetryDir, gameId);
-  const logStats = await getRunLogStats(config.logsDir, gameId);
-  const notes = getNotes(gameId);
+  console.timeEnd(`${prefix} getTotalTokens`);
 
+  console.time(`${prefix} getRunLogStats`);
+  const logStats = await getRunLogStats(config.logsDir, gameId);
+  console.timeEnd(`${prefix} getRunLogStats`);
+
+  console.time(`${prefix} getNotes`);
+  const notes = getNotes(gameId);
+  console.timeEnd(`${prefix} getNotes`);
+
+  console.timeEnd(`${prefix} total`);
   return NextResponse.json({ ...detail, tokens, logStats, notes });
 }
