@@ -167,6 +167,37 @@ export function getErrorSpans(telemetryDir: string, gameId: string): ErrorSpan[]
   return allErrors;
 }
 
+// Extracts error spans with their turn numbers for timeline chart overlay.
+function getErrorTurnsFromDb(dbPath: string): { turn: number; name: string; message: string }[] {
+  let db: Database.Database | null = null;
+  try {
+    db = new Database(dbPath, { readonly: true });
+    const rows = db.prepare(
+      'SELECT turn, name, statusMessage FROM spans WHERE statusCode = 2 AND turn IS NOT NULL ORDER BY turn ASC'
+    ).all() as { turn: number; name: string; statusMessage: string | null }[];
+    return rows.map(row => ({
+      turn: row.turn,
+      name: row.name,
+      message: row.statusMessage ?? '',
+    }));
+  } catch {
+    return [];
+  } finally {
+    db?.close();
+  }
+}
+
+// Aggregates error turns across all telemetry files for timeline chart display.
+export function getErrorTurns(telemetryDir: string, gameId: string): { turn: number; name: string; message: string }[] {
+  const files = findTelemetryFiles(telemetryDir, gameId);
+  const allErrors: { turn: number; name: string; message: string }[] = [];
+  for (const file of files) {
+    allErrors.push(...getErrorTurnsFromDb(file));
+  }
+  allErrors.sort((a, b) => a.turn - b.turn);
+  return allErrors;
+}
+
 // Aggregates run stats across all telemetry files for a gameId.
 // Uses the spans table for duration (MIN/MAX startTime) and errors (statusCode == 2).
 export function getRunLogStats(telemetryDir: string, gameId: string): RunLogStats {

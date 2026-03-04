@@ -317,12 +317,20 @@ export interface TimelinePlayer {
   isAi: boolean;
 }
 
+// Lightweight error representation for timeline chart (turn-indexed, from telemetry spans).
+export interface TimelineError {
+  turn: number;
+  name: string;
+  message: string;
+}
+
 // Complete timeline data structure returned by getTimelineData().
 // Used by the /api/runs/{gameId}/timeline route and TimelineChart component.
 export interface TimelineData {
   players: TimelinePlayer[];
   series: TimelineDataPoint[];
   events: TimelineEvent[];
+  errors: TimelineError[];
 }
 
 // Event types to include in timeline and their categories.
@@ -482,7 +490,7 @@ export function getTimelineData(db: Database.Database): TimelineData {
   const series = getTimelineSeries(db, majorKeys);
   const events = getTimelineEvents(db, players);
 
-  return { players: timelinePlayers, series, events };
+  return { players: timelinePlayers, series, events, errors: [] };
 }
 
 export function getRunDetail(dbPath: string) {

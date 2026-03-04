@@ -8,13 +8,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine, Brush, Legend,
+  ResponsiveContainer, ReferenceLine, ReferenceDot, Brush, Legend,
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import {
   TimelinePlayer,
   TimelineDataPoint,
   TimelineEvent,
+  TimelineError,
   TimelineData,
 } from '@/lib/db.js';
 
@@ -49,6 +50,7 @@ const categoryColors: Record<string, string> = {
   war: '#ef4444',
   progression: '#f59e0b',
   milestone: '#3b82f6',
+  error: '#f87171',
 };
 
 // Transforms flat series array into per-turn objects indexed by player and metric.
@@ -128,23 +130,52 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
     return uniqueEventTurns(data.events);
   }, [data]);
 
-  // Finds the nearest event to the clicked turn and scrolls it into view.
+  // Errors grouped by turn for tooltip display.
+  const errorsByTurn = useMemo(() => {
+    if (!data?.errors?.length) return new Map<number, TimelineError[]>();
+    const map = new Map<number, TimelineError[]>();
+    for (const e of data.errors) {
+      const arr = map.get(e.turn);
+      if (arr) arr.push(e);
+      else map.set(e.turn, [e]);
+    }
+    return map;
+  }, [data]);
+
+  // Deduplicated error turns for chart dots (one dot per turn).
+  const errorTurns = useMemo(() => {
+    if (!data?.errors?.length) return [] as number[];
+    return [...new Set(data.errors.map(e => e.turn))];
+  }, [data]);
+
+  // Combined events + errors for the right panel, sorted by turn.
+  type DisplayItem = { turn: number; label: string; detail: string; category: string };
+  const displayItems = useMemo((): DisplayItem[] => {
+    if (!data) return [];
+    const items: DisplayItem[] = [
+      ...data.events.map(e => ({ turn: e.turn, label: e.label, detail: e.detail, category: e.category })),
+      ...(data.errors ?? []).map(e => ({ turn: e.turn, label: e.name, detail: e.message, category: 'error' })),
+    ];
+    items.sort((a, b) => a.turn - b.turn);
+    return items;
+  }, [data]);
+
+  // Finds the nearest item to the clicked turn and scrolls it into view.
   const handleChartClick = useCallback((chartData: any) => {
-    if (!chartData?.activeLabel || !data?.events.length) return;
+    if (!chartData?.activeLabel || !displayItems.length) return;
     const turn = chartData.activeLabel as number;
 
-    // Find the event closest to the clicked turn.
     let bestIdx = 0;
     let bestDist = Infinity;
-    for (let i = 0; i < data.events.length; i++) {
-      const d = Math.abs(data.events[i].turn - turn);
+    for (let i = 0; i < displayItems.length; i++) {
+      const d = Math.abs(displayItems[i].turn - turn);
       if (d < bestDist) { bestDist = d; bestIdx = i; }
     }
 
-    const target = data.events[bestIdx];
+    const target = displayItems[bestIdx];
     setHighlightedTurn(target.turn);
     eventRefsMap.current.get(bestIdx)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }, [data]);
+  }, [displayItems]);
 
   // Loading skeleton
   if (loading) {
@@ -181,6 +212,7 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
     if (!active || !payload || !payload.length) return null;
     const turn = label as number;
     const turnEvents = eventsByTurn.get(turn);
+    const turnErrors = errorsByTurn.get(turn);
 
     return (
       <div style={{
@@ -198,6 +230,15 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
             {turnEvents.map((ev, i) => (
               <p key={i} style={{ margin: 0, color: categoryColors[ev.category], fontSize: 11 }}>
                 {ev.label}: {ev.detail}
+              </p>
+            ))}
+          </div>
+        )}
+        {turnErrors && turnErrors.length > 0 && (
+          <div style={{ borderTop: '1px solid #3f3f46', marginTop: 4, paddingTop: 4 }}>
+            {turnErrors.map((err, i) => (
+              <p key={`err-${i}`} style={{ margin: 0, color: categoryColors.error, fontSize: 11 }}>
+                {err.name}{err.message ? `: ${err.message}` : ''}
               </p>
             ))}
           </div>
@@ -239,10 +280,13 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
                 label={{ value: 'Turn', position: 'insideBottomRight', offset: -5, fontSize: 10, fill: '#71717a' }}
               />
               <YAxis
+                yAxisId="left"
                 stroke="#71717a"
                 tick={{ fontSize: 11 }}
                 label={{ value: metricLabels[metric], angle: -90, position: 'insideLeft', fontSize: 10, fill: '#71717a' }}
               />
+              {/* Hidden axis for positioning error dots at a fixed vertical position */}
+              <YAxis yAxisId="error" hide domain={[0, 1]} orientation="right" />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
 
@@ -251,6 +295,7 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
                 <ReferenceLine
                   key={`ev-${i}`}
                   x={turn}
+                  yAxisId="left"
                   stroke={categoryColors[category]}
                   strokeDasharray="4 4"
                   strokeOpacity={0.5}
@@ -261,6 +306,7 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
               {sortedPlayers.map((player) => (
                 <Line
                   key={player.playerId}
+                  yAxisId="left"
                   type="monotone"
                   dataKey={`${metricPrefix}_${player.playerId}`}
                   name={`${player.civilization} (${player.leader})`}
@@ -272,6 +318,21 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
                 />
               ))}
 
+              {/* Error dots along the bottom of the chart */}
+              {errorTurns.map((turn) => (
+                <ReferenceDot
+                  key={`err-${turn}`}
+                  x={turn}
+                  y={0.06}
+                  yAxisId="error"
+                  r={3.5}
+                  fill={categoryColors.error}
+                  stroke="#7f1d1d"
+                  strokeWidth={1}
+                  ifOverflow="extendDomain"
+                />
+              ))}
+
               {needsBrush && (
                 <Brush dataKey="turn" height={20} stroke="#3f3f46" fill="#18181b" />
               )}
@@ -279,28 +340,28 @@ export default function TimelineChart({ gameId }: TimelineChartProps) {
           </ResponsiveContainer>
         </div>
 
-        {/* Events list — fixed-width right panel */}
-        {data.events.length > 0 && (
+        {/* Events + errors list — fixed-width right panel */}
+        {displayItems.length > 0 && (
           <div className="w-64 shrink-0 border-l border-border pl-4">
             <p className="text-xs text-muted-foreground font-medium mb-2">Events</p>
             <div className="space-y-1 text-xs max-h-[420px] overflow-y-auto pr-1">
-              {data.events.map((ev, i) => (
+              {displayItems.map((item, i) => (
                 <div
                   key={i}
                   ref={(el) => { if (el) eventRefsMap.current.set(i, el); else eventRefsMap.current.delete(i); }}
                   className={`flex items-start gap-1.5 py-0.5 px-1 rounded transition-colors duration-300 ${
-                    highlightedTurn === ev.turn ? 'bg-white/10' : ''
+                    highlightedTurn === item.turn ? 'bg-white/10' : ''
                   }`}
                 >
                   <span
                     className="inline-block w-2 h-2 rounded-full shrink-0 mt-1"
-                    style={{ background: categoryColors[ev.category] }}
+                    style={{ background: categoryColors[item.category] }}
                   />
                   <div className="min-w-0">
-                    <span className="text-muted-foreground">T{ev.turn}</span>{' '}
-                    <span className="font-medium">{ev.label}</span>
-                    {ev.detail && (
-                      <span className="text-muted-foreground"> — {ev.detail}</span>
+                    <span className="text-muted-foreground">T{item.turn}</span>{' '}
+                    <span className={`font-medium ${item.category === 'error' ? 'text-red-400' : ''}`}>{item.label}</span>
+                    {item.detail && (
+                      <span className="text-muted-foreground"> — {item.detail}</span>
                     )}
                   </div>
                 </div>

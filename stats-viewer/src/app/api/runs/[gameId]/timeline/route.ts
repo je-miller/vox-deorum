@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { findGameDbs, getTimelineData } from '@/lib/db';
+import { getErrorTurns } from '@/lib/telemetry';
 import { getConfig } from '@/lib/config';
 import path from 'path';
 import Database from 'better-sqlite3';
@@ -36,8 +37,12 @@ export async function GET(
     const data = getTimelineData(db);
     console.timeEnd(`${prefix} getTimelineData`);
 
+    console.time(`${prefix} getErrorTurns`);
+    const errors = getErrorTurns(config.telemetryDir, gameId);
+    console.timeEnd(`${prefix} getErrorTurns`);
+
     console.timeEnd(`${prefix} total`);
-    return NextResponse.json(data);
+    return NextResponse.json({ ...data, errors });
   } catch {
     console.timeEnd(`${prefix} total`);
     return NextResponse.json({ error: 'Failed to read DB' }, { status: 500 });
