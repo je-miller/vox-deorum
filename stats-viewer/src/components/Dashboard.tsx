@@ -27,6 +27,7 @@ interface Run {
   gitCommit: string | null;
   gitBranch: string | null;
   gitRemote: string | null;
+  strategists: string[];
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
 }
 
@@ -53,7 +54,8 @@ export default function Dashboard({ runs }: DashboardProps) {
         r.modelName?.toLowerCase().includes(q) ||
         r.modelConfig?.toLowerCase().includes(q) ||
         r.gitCommit?.toLowerCase().includes(q) ||
-        r.gitBranch?.toLowerCase().includes(q)
+        r.gitBranch?.toLowerCase().includes(q) ||
+        r.strategists.some((s) => s.toLowerCase().includes(q))
       );
     }
     return list;

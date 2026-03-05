@@ -27,6 +27,8 @@ export interface GameMetadata {
   gitCommit: string | null;
   gitBranch: string | null;
   gitRemote: string | null;
+  // Strategist agent names collected from strategist-0, strategist-1, … keys.
+  strategists: string[];
 }
 
 export interface PlayerInformation {
@@ -99,11 +101,14 @@ export function getGameMetadata(db: Database.Database): GameMetadata {
   }
 
   // Token counts are written per-player as inputTokens-N, outputTokens-N, reasoningTokens-N.
+  // Strategist names are written as strategist-0, strategist-1, … keys.
   let inputTokens = 0, outputTokens = 0, reasoningTokens = 0;
+  const strategists: string[] = [];
   for (const [key, val] of Object.entries(map)) {
     if (key.startsWith('inputTokens-')) inputTokens += Number(val) || 0;
     else if (key.startsWith('outputTokens-')) outputTokens += Number(val) || 0;
     else if (key.startsWith('reasoningTokens-')) reasoningTokens += Number(val) || 0;
+    else if (key.startsWith('strategist-') && val) strategists.push(val);
   }
 
   // victoryPlayerID is stored as a float string e.g. "0.0" matching PlayerInformations.PlayerId.
@@ -129,6 +134,7 @@ export function getGameMetadata(db: Database.Database): GameMetadata {
     gitCommit: map['gitCommit'] ?? null,
     gitBranch: map['gitBranch'] ?? null,
     gitRemote: map['gitRemote'] ?? null,
+    strategists,
   };
 }
 
@@ -249,6 +255,7 @@ export interface RunInfo {
   gitCommit: string | null;
   gitBranch: string | null;
   gitRemote: string | null;
+  strategists: string[];
   outcome: 'Win' | 'Loss' | 'Incomplete';
 }
 
@@ -283,6 +290,7 @@ export function getRunInfo(dbPath: string): RunInfo | null {
       gitCommit: metadata.gitCommit,
       gitBranch: metadata.gitBranch,
       gitRemote: metadata.gitRemote,
+      strategists: metadata.strategists,
       outcome,
     };
   } finally {

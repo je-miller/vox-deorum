@@ -23,6 +23,7 @@ interface Run {
   gitCommit: string | null;
   gitBranch: string | null;
   gitRemote: string | null;
+  strategists: string[];
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
 }
 
@@ -108,6 +109,7 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
               <th className="px-3 py-2 text-right font-medium"><SortBtn k="tokens" label="In Tokens" /></th>
               <th className="px-3 py-2 text-right font-medium">Out Tokens</th>
               <th className="px-3 py-2 text-left font-medium">Model</th>
+              <th className="px-3 py-2 text-left font-medium">Strategist</th>
               <th className="px-3 py-2 text-left font-medium">Git</th>
               <th className="px-3 py-2 text-left font-medium">Tags</th>
               <th className="px-3 py-2 text-center font-medium">Link</th>
@@ -115,7 +117,7 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
           </thead>
           <tbody>
             {sorted.length === 0 && (
-              <tr><td colSpan={14} className="text-center py-8 text-muted-foreground">No runs found</td></tr>
+              <tr><td colSpan={15} className="text-center py-8 text-muted-foreground">No runs found</td></tr>
             )}
             {sorted.map((run) => (
               <tr
@@ -141,6 +143,7 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.input)}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.output)}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground">{run.modelName ?? run.modelConfig ?? run.notes.llmModel ?? '—'}</td>
+                <td className="px-3 py-2 text-xs text-muted-foreground">{run.strategists.length > 0 ? run.strategists.join(', ') : '—'}</td>
                 <td className="px-3 py-2 text-xs text-muted-foreground"><div title={run.gitRemote ?? '—'}>{run.gitCommit ? run.gitCommit.slice(0, 10) : '—'}</div>{run.gitBranch}</td>
                 <td className="px-3 py-2">
                   <div className="flex flex-wrap gap-1">

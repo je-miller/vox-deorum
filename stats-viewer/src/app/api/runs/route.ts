@@ -40,6 +40,7 @@ export function GET() {
         gitCommit: info.gitCommit,
         gitBranch: info.gitBranch,
         gitRemote: info.gitRemote,
+        strategists: info.strategists,
         notes,
       };
     })
