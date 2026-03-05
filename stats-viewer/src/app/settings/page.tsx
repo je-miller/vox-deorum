@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import ProfileSync from '@/components/ProfileSync';
 
 interface Profile {
   name: string;
@@ -316,6 +317,11 @@ export default function SettingsPage() {
           Reset
         </Button>
       </div>
+
+      {/* Section 4: Profile Sync — only shown when at least 2 profiles are saved */}
+      {original.profiles.length >= 2 && (
+        <ProfileSync profiles={original.profiles} />
+      )}
     </div>
   );
 }
