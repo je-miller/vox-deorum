@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, Database } from 'lucide-react';
+import { ArrowUpDown, Database, Activity } from 'lucide-react';
 
 interface Run {
   gameId: string;
@@ -153,11 +153,18 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
                   </div>
                 </td>
                 <td className="px-3 py-2 text-center">
-                  <Link href={`/db-browser?gameId=${encodeURIComponent(run.gameId)}`}>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Database className="h-3.5 w-3.5" />
-                    </Button>
-                  </Link>
+                  <div className="flex items-center justify-center gap-0.5">
+                    <Link href={`/db-browser?gameId=${encodeURIComponent(run.gameId)}&type=game`} title="Game DB">
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Database className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                    <Link href={`/db-browser?gameId=${encodeURIComponent(run.gameId)}&type=telemetry`} title="Telemetry DB">
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <Activity className="h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}
