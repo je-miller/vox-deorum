@@ -14,6 +14,7 @@ import { jsonToMarkdown } from "../../utils/tools/json-to-markdown.js";
 import { SimpleBriefer } from "../../briefer/simple-briefer.js";
 import { analyzeVictoryUrgency, formatUrgencySection, analyzeVictoryReachability, formatReachabilitySection } from "../../utils/victory-urgency.js";
 import { analyzeCompetitivePosition, formatCompetitiveSection, detectLedgerStaleness, formatStalenessSection } from "../../utils/strategic-warnings.js";
+import { generateOpponentDossiers } from "../../utils/opponent-dossiers.js";
 
 /**
  * A simple strategist agent that analyzes the game state and sets an appropriate strategy.
@@ -55,7 +56,9 @@ ${SimpleStrategistBase.endgameAwarenessPrompt}
 ${SimpleStrategistBase.competitivePositionPrompt}
 ${SimpleStrategistBase.victoryReachabilityPrompt}
 ${SimpleStrategistBase.stalenessWarningPrompt}
+${SimpleStrategistBase.recipePrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
+${SimpleStrategistBase.opponentDossierPrompt}
 ${SimpleStrategistBase.geopoliticalPrompt}
 ${SimpleBriefer.citiesPrompt}
 ${SimpleBriefer.militaryPrompt}
@@ -80,6 +83,15 @@ ${SimpleBriefer.eventsPrompt}`.trim()
     const competitiveSection = competitive.hasWarnings ? formatCompetitiveSection(competitive) + '\n' : '';
     const staleness = detectLedgerStaleness(parameters.gameStates, parameters.turn);
     const stalenessSection = staleness.length > 0 ? formatStalenessSection(staleness) + '\n' : '';
+
+    // Generate opponent dossiers
+    const dossiers = generateOpponentDossiers(
+      state.players,
+      state.victory,
+      parameters.playerID ?? 0,
+      parameters.gameStates,
+      parameters.turn
+    );
 
     // Return the messages
     return [{
@@ -122,7 +134,7 @@ ${jsonToMarkdown(state.victory)}
 Players: summary reports about visible players in the world.
 
 ${jsonToMarkdown(state.players)}
-${state.geopolitical ? `\n# Geopolitical Summary\nGeopolitical Summary: spatial analysis of your neighbors.\n\n${jsonToMarkdown(state.geopolitical)}\n` : ''}
+${dossiers ? `\n${dossiers}` : ''}${state.geopolitical ? `\n# Geopolitical Summary\nGeopolitical Summary: spatial analysis of your neighbors.\n\n${jsonToMarkdown(state.geopolitical)}\n` : ''}
 # Cities
 Cities: summary reports about discovered cities in the world.
 

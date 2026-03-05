@@ -15,6 +15,7 @@ import { requestBriefing, assembleBriefings, briefingInstructionKeys } from "../
 import { getStrategicPlayersReport } from "../../utils/report-filters.js";
 import { analyzeVictoryUrgency, formatUrgencySection, analyzeVictoryReachability, formatReachabilitySection } from "../../utils/victory-urgency.js";
 import { analyzeCompetitivePosition, formatCompetitiveSection, detectLedgerStaleness, formatStalenessSection } from "../../utils/strategic-warnings.js";
+import { generateOpponentDossiers } from "../../utils/opponent-dossiers.js";
 
 /**
  * A staffed strategist agent that uses specialized briefers for comprehensive analysis.
@@ -61,7 +62,9 @@ ${SimpleStrategistBase.endgameAwarenessPrompt}
 ${SimpleStrategistBase.competitivePositionPrompt}
 ${SimpleStrategistBase.victoryReachabilityPrompt}
 ${SimpleStrategistBase.stalenessWarningPrompt}
+${SimpleStrategistBase.recipePrompt}
 ${SimpleStrategistBase.playersInfoPrompt}
+${SimpleStrategistBase.opponentDossierPrompt}
 ${SimpleStrategistBase.geopoliticalPrompt}
 - Briefings: prepared by your specialized briefers, covering Military, Economy, and Diplomacy aspects.
   - You will make independent and wise judgment based on all briefings.`.trim()
@@ -138,6 +141,15 @@ ${SimpleStrategistBase.geopoliticalPrompt}
     const staleness = detectLedgerStaleness(parameters.gameStates, parameters.turn);
     const stalenessSection = staleness.length > 0 ? formatStalenessSection(staleness) + '\n' : '';
 
+    // Generate opponent dossiers
+    const dossiers = generateOpponentDossiers(
+      state.players,
+      state.victory,
+      parameters.playerID ?? 0,
+      parameters.gameStates,
+      parameters.turn
+    );
+
     // Return the messages with all briefings
     return [{
       role: "system",
@@ -173,7 +185,7 @@ ${state.ledger ? jsonToMarkdown(state.ledger) : 'No ledger yet — initialize yo
 Players: summary reports about visible players in the world.
 
 ${jsonToMarkdown(getStrategicPlayersReport(state.players!))}
-${state.geopolitical ? `\n# Geopolitical Summary\nGeopolitical Summary: spatial analysis of your neighbors.\n\n${jsonToMarkdown(state.geopolitical)}\n` : ''}
+${dossiers ? `\n${dossiers}` : ''}${state.geopolitical ? `\n# Geopolitical Summary\nGeopolitical Summary: spatial analysis of your neighbors.\n\n${jsonToMarkdown(state.geopolitical)}\n` : ''}
 # Victory Progress
 Victory Progress: current progress towards each type of victory.
 

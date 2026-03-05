@@ -62,6 +62,7 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
   - \`make-peace\`: End a war. May fail if locked into minimum war turns.
   - \`denounce\`: Publicly denounce (damages relations with target and their friends).
   - \`declare-friendship\`: Declare mutual friendship (improves relations, enables cooperation).
+- You can \`gift-city-state\` gold (multiples of 250) to gain influence. Use this to secure allies, resources, or delegates for Diplomatic victory.
 - You can change the in-game AI's NEXT technology to research (when completing the ongoing one) by calling the \`set-research\` tool.
 - You can change the in-game AI's NEXT policy to adopt (when you accumulate enough culture) by calling the \`set-policy\` tool.`;
 
@@ -76,8 +77,9 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
    * Shared prompt: Decision-making description in the Strategy mode
    */
   public static getDecisionPrompt(mode: StrategyDecisionType) {
-    return `- Each turn, you must call either \`${mode == "Flavor" ? "set-flavors" : "set-strategy"}\` or \`keep-status-quo\` tool.
+    return `- Each turn, you must call either \`${mode == "Flavor" ? "set-flavors" : "set-strategy"}\`, \`set-strategy-recipe\`, or \`keep-status-quo\` tool.
   - Set an appropriate grand (long-term) strategy and ${mode == "Flavor" ? "additional short-term flavors" : "short-term economic/military strategies"} by calling the \`${mode == "Flavor" ? "set-flavors" : "set-strategy"}\` tool.
+  - Or use \`set-strategy-recipe\` to apply an expert-tuned flavor profile for a specific victory path and game phase (Early/Mid/Late), with optional per-flavor overrides for your situation.
   - Alternatively, use the tool \`keep-status-quo\` to keep strategies the same.
   - ${mode === "Flavor" ? "Flavors" : "Strategies"} change the weight of the in-game AI's NEXT decision. It only takes effect AFTER existing queues.${mode === "Flavor" ? "\n  - Flavor ranges from 0 (completely deprioritizes) to 50 (balanced) to 100 (completely prioritizes). Too many priorities weaken impact for each." : ""}
   - You can pursue multiple synergistic victory pathways. Balance between long-term goals and short-term needs.
@@ -156,6 +158,21 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
   - Victory proximity is marked with urgency levels: APPROACHING → IMMINENT → CRITICAL.`;
 
   /**
+   * Shared prompt: Strategy recipe description
+   */
+  public static readonly recipePrompt = `- Strategy Recipes: pre-tuned flavor profiles for each victory path and game phase.
+  - Recipes: Conquest, SpaceShip, Culture, UnitedNations. Phases: Early (T1-60), Mid (T61-150), Late (T151+).
+  - Use \`set-strategy-recipe\` to apply a recipe. You can add Overrides for situation-specific adjustments.
+  - Recipes set all 34 flavors at once to expert-tuned values, plus the matching grand strategy.`;
+
+  /**
+   * Shared prompt: Opponent dossier description
+   */
+  public static readonly opponentDossierPrompt = `- Opponent Dossiers: automated strategic assessments of each opponent.
+  - Includes likely victory path, estimated turns to victory, metric trends, military posture, and vulnerabilities.
+  - Use the Counter recommendation for actionable guidance against each opponent's strategy.`;
+
+  /**
    * Shared prompt: Players information description
    */
   public static readonly playersInfoPrompt = `- Players: summary reports about visible players in the world.
@@ -186,6 +203,7 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
     return [
       "update-strategic-ledger",
       parameters.mode === "Strategy" ? "set-strategy" : "set-flavors",
+      "set-strategy-recipe",
       "set-persona",
       "set-research",
       "set-policy",
@@ -194,6 +212,7 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
       "make-peace",
       "denounce",
       "declare-friendship",
+      "gift-city-state",
       "keep-status-quo"
     ];
   }
@@ -216,6 +235,10 @@ Your goal is to **call as many tools as you need** to make high-level decisions 
         }
         if (result.toolName === "set-flavors" && result.output) {
           this.logger.debug("Set-flavors tool executed, stopping agent");
+          return true;
+        }
+        if (result.toolName === "set-strategy-recipe" && result.output) {
+          this.logger.debug("Set-strategy-recipe tool executed, stopping agent");
           return true;
         }
         if (result.toolName === "keep-status-quo" && result.output) {

@@ -76,6 +76,13 @@ export async function loadFlavorDescriptions(): Promise<Record<string, string>> 
 }
 
 /**
+ * Load flavor recipes (victory path x game phase -> full flavor profiles)
+ */
+export async function loadFlavorRecipes(): Promise<Record<string, Record<string, Record<string, number>>>> {
+  return loadStrategyFile<Record<string, Record<string, Record<string, number>>>>('flavor-recipes.json');
+}
+
+/**
  * Load grand strategy descriptions from JSON file
  */
 export async function loadGrandStrategyDescriptions(): Promise<Record<string, string>> {

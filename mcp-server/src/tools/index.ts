@@ -38,6 +38,8 @@ import createDeclareWarTool from "./actions/declare-war.js";
 import createMakePeaceTool from "./actions/make-peace.js";
 import createDenounceTool from "./actions/denounce.js";
 import createDeclareFriendshipTool from "./actions/declare-friendship.js";
+import createGiftCityStateTool from "./actions/gift-city-state.js";
+import createSetStrategyRecipeTool from "./actions/set-strategy-recipe.js";
 
 // Tool factory configuration - one line per tool
 const toolFactories = {
@@ -77,6 +79,8 @@ const toolFactories = {
     makePeace: createMakePeaceTool,
     denounce: createDenounceTool,
     declareFriendship: createDeclareFriendshipTool,
+    giftCityState: createGiftCityStateTool,
+    setStrategyRecipe: createSetStrategyRecipeTool,
     keepStatusQuo: createKeepStatusQuoTool,
     relayMessage: createRelayMessageTool,
     pauseGame: createPauseGameTool,
