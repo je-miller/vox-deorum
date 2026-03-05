@@ -278,6 +278,38 @@
     }
   },
   {
+    "name": "declare-war",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
+    "name": "make-peace",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
+    "name": "denounce",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
+    "name": "declare-friendship",
+    "_meta": {
+      "autoComplete": [
+        "PlayerID"
+      ]
+    }
+  },
+  {
     "name": "keep-status-quo",
     "_meta": {
       "autoComplete": [
