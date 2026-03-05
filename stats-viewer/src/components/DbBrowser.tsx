@@ -70,8 +70,11 @@ export default function DbBrowser() {
   // Filtering state — sent to server. Debounced to avoid spamming requests.
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [debouncedFilters, setDebouncedFilters] = useState<Record<string, string>>({});
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
   const filterTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Preserve scroll position across data reloads (filter, sort, page changes)
+  const scrollPosRef = useRef(0);
 
   // Debounce filter changes (300ms)
   useEffect(() => {
@@ -125,6 +128,7 @@ export default function DbBrowser() {
   // Fetch rows — includes sort and filter params sent to server
   const fetchRows = useCallback(() => {
     if (!selectedDb || !selectedTable) return;
+    scrollPosRef.current = window.scrollY;
     setLoading(true);
     setSelectedRowIndex(null);
 
@@ -155,6 +159,13 @@ export default function DbBrowser() {
     fetchRows();
   }, [fetchRows]);
 
+  // Restore scroll position after data loads
+  useEffect(() => {
+    if (!loading && data) {
+      window.scrollTo(0, scrollPosRef.current);
+    }
+  }, [loading, data]);
+
   const handleTableChange = (table: string) => {
     setSelectedTable(table);
     setOffset(0);
@@ -178,7 +189,6 @@ export default function DbBrowser() {
       setSortAsc(true);
     }
     setOffset(0);
-    setSelectedRowIndex(null);
   };
 
   const setFilter = (colName: string, value: string) => {
@@ -188,7 +198,6 @@ export default function DbBrowser() {
       else delete next[colName];
       return next;
     });
-    setSelectedRowIndex(null);
   };
 
   const clearFilters = () => {
@@ -332,7 +341,7 @@ export default function DbBrowser() {
       <div className="flex gap-0">
         {/* Data table */}
         <div className={`min-w-0 ${flyoutOpen ? 'flex-1' : 'w-full'}`}>
-          {loading && (
+          {loading && !data && (
             <div className="text-center py-12 text-muted-foreground">Loading...</div>
           )}
 
@@ -344,8 +353,8 @@ export default function DbBrowser() {
             <div className="text-center py-12 text-muted-foreground">Select a database to get started</div>
           )}
 
-          {!loading && data && (
-            <div className="rounded-md border border-border overflow-x-auto">
+          {data && (
+            <div className={`rounded-md border border-border overflow-x-auto transition-opacity ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
               <table className="w-full text-sm">
                 <thead>
                   {/* Column headers with sort */}
