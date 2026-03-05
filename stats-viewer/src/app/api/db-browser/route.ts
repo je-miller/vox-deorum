@@ -46,9 +46,19 @@ export function GET(req: NextRequest) {
 
     const limit = Math.min(Number(params.get('limit')) || 100, 1000);
     const offset = Math.max(Number(params.get('offset')) || 0, 0);
+    const sortCol = params.get('sortCol') || null;
+    const sortDir = params.get('sortDir') === 'desc' ? 'desc' as const : 'asc' as const;
+
+    // Parse column filters: filter.ColName=value
+    const filters: Record<string, string> = {};
+    for (const [key, value] of params.entries()) {
+      if (key.startsWith('filter.') && value) {
+        filters[key.slice(7)] = value;
+      }
+    }
 
     try {
-      const result = getTableRows(dbPath, table, limit, offset);
+      const result = getTableRows(dbPath, table, { limit, offset, sortCol, sortDir, filters });
       return NextResponse.json(result);
     } catch (e) {
       return NextResponse.json({ error: `Failed to fetch rows: ${(e as Error).message}` }, { status: 500 });

@@ -95,8 +95,17 @@ export function getTableSchema(dbPath: string, table: string): ColumnDef[] {
   }
 }
 
-// Fetches paginated rows from a table. Table name is validated against sqlite_master before use.
-export function getTableRows(dbPath: string, table: string, limit: number, offset: number): TableRows {
+export interface QueryOptions {
+  limit: number;
+  offset: number;
+  sortCol?: string | null;
+  sortDir?: 'asc' | 'desc';
+  filters?: Record<string, string>; // column name → substring match
+}
+
+// Fetches paginated rows from a table with optional server-side sorting and filtering.
+// Table and column names are validated against sqlite_master/table_info before use.
+export function getTableRows(dbPath: string, table: string, options: QueryOptions): TableRows {
   const db = new Database(dbPath, { readonly: true });
   try {
     // Validate table exists in sqlite_master (prevents SQL injection via table name)
@@ -106,8 +115,33 @@ export function getTableRows(dbPath: string, table: string, limit: number, offse
     }
 
     const columns = getTableSchemaFromDb(db, table);
-    const countRow = db.prepare(`SELECT COUNT(*) AS cnt FROM "${table}"`).get() as { cnt: number };
-    const rows = db.prepare(`SELECT * FROM "${table}" LIMIT ? OFFSET ?`).all(limit, offset) as Record<string, unknown>[];
+    const columnNames = new Set(columns.map((c) => c.name));
+
+    // Build WHERE clause from filters (validated column names, parameterized values)
+    const whereClauses: string[] = [];
+    const whereParams: string[] = [];
+    if (options.filters) {
+      for (const [col, term] of Object.entries(options.filters)) {
+        if (!term || !columnNames.has(col)) continue;
+        whereClauses.push(`CAST("${col}" AS TEXT) LIKE ?`);
+        whereParams.push(`%${term}%`);
+      }
+    }
+    const whereSQL = whereClauses.length > 0 ? ` WHERE ${whereClauses.join(' AND ')}` : '';
+
+    // Build ORDER BY clause (validated column name)
+    let orderSQL = '';
+    if (options.sortCol && columnNames.has(options.sortCol)) {
+      const dir = options.sortDir === 'desc' ? 'DESC' : 'ASC';
+      orderSQL = ` ORDER BY "${options.sortCol}" ${dir}`;
+    }
+
+    // Count with filters applied
+    const countRow = db.prepare(`SELECT COUNT(*) AS cnt FROM "${table}"${whereSQL}`).get(...whereParams) as { cnt: number };
+
+    // Fetch rows with filters, sort, and pagination
+    const allParams = [...whereParams, options.limit, options.offset];
+    const rows = db.prepare(`SELECT * FROM "${table}"${whereSQL}${orderSQL} LIMIT ? OFFSET ?`).all(...allParams) as Record<string, unknown>[];
 
     return { columns, rows, totalCount: countRow.cnt };
   } finally {
