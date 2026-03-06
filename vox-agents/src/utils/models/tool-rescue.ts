@@ -431,9 +431,22 @@ export function toolRescueMiddleware(options?: ToolRescueOptions): LanguageModel
       // Convert existing tool-call/tool-result messages to text so the model
       // sees a consistent text-based history instead of native tool parts it never produced
       const convertedPrompt = convertPromptToolMessagesToText(params.prompt ?? []);
+
+      // Merge tool prompt and all system messages into a single system message at position 0.
+      // Some models (e.g. Qwen) only allow one system message and it must be first.
+      if (!toolPrompt) return params;
+      const systemParts: string[] = [toolPrompt];
+      const nonSystemMessages: typeof convertedPrompt = [];
+      for (const msg of convertedPrompt) {
+        if (msg.role === 'system') {
+          systemParts.push(msg.content as string);
+        } else {
+          nonSystemMessages.push(msg);
+        }
+      }
       const modifiedPrompt: any = [
-        { role: 'system', content: toolPrompt },
-        ...convertedPrompt
+        { role: 'system', content: systemParts.join('\n\n') },
+        ...nonSystemMessages
       ];
 
       // Return modified params without tools (since we're using JSON format)
