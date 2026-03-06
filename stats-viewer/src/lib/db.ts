@@ -248,6 +248,8 @@ export interface RunInfo {
   turn: number;
   lastSave: string;
   aiPlayer: PlayerInformation | null;
+  // All major players (IsMajor=1) for replay file matching.
+  majorPlayers: PlayerInformation[];
   victoryType: string | null;
   tokens: TokenUsage;
   modelName: string | null;
@@ -283,6 +285,7 @@ export function getRunInfo(dbPath: string): RunInfo | null {
       turn: metadata.turn,
       lastSave: metadata.lastSave,
       aiPlayer,
+      majorPlayers: players.filter((p) => p.IsMajor === 1),
       victoryType: metadata.victoryType,
       tokens: metadata.tokens,
       modelName: metadata.modelName,
@@ -499,6 +502,41 @@ export function getTimelineData(db: Database.Database): TimelineData {
   const events = getTimelineEvents(db, players);
 
   return { players: timelinePlayers, series, events, errors: [] };
+}
+
+// Scans a Civ 5 Replays directory and returns a lookup: "leaderName|turn" → filename.
+// Replay filenames follow the pattern: {WinnerLeader}_{Turn} {ADDate}_{Index}.Civ5Replay
+export function buildReplayIndex(replayDir: string): Map<string, string> {
+  const index = new Map<string, string>();
+  if (!replayDir || !fs.existsSync(replayDir)) return index;
+  try {
+    for (const f of fs.readdirSync(replayDir)) {
+      if (!f.endsWith('.Civ5Replay')) continue;
+      const match = f.match(/^(.+)_(\d+) .+\.Civ5Replay$/);
+      if (!match) continue;
+      const leader = match[1];
+      const turn = parseInt(match[2], 10);
+      index.set(`${leader}|${turn}`, f);
+    }
+  } catch {
+    // Directory not readable
+  }
+  return index;
+}
+
+// Finds the replay filename matching a game run by checking if any player leader + turn
+// matches a replay file in the index.
+export function findReplayFile(
+  replayIndex: Map<string, string>,
+  turn: number,
+  players: PlayerInformation[],
+): string | null {
+  for (const p of players) {
+    const key = `${p.Leader}|${turn}`;
+    const match = replayIndex.get(key);
+    if (match) return match;
+  }
+  return null;
 }
 
 export function getRunDetail(dbPath: string) {

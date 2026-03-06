@@ -28,6 +28,7 @@ interface Run {
   gitBranch: string | null;
   gitRemote: string | null;
   strategists: string[];
+  replayFile: string | null;
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
 }
 

@@ -26,6 +26,9 @@ export interface AppConfig {
   dbDir: string;
   telemetryDir: string;
   logsDir: string;
+
+  // Standalone path to Civ 5 Replays directory (not profile-relative).
+  replayDir: string;
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -41,6 +44,7 @@ export const defaultConfig: AppConfig = {
   dbDir: path.join(process.cwd(), '..', 'mcp-server', 'data'),
   telemetryDir: path.join(process.cwd(), '..', 'vox-agents', 'telemetry'),
   logsDir: path.join(process.cwd(), '..', 'vox-agents', 'logs'),
+  replayDir: '',
 };
 
 function ensureDataDir(): void {

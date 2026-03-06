@@ -2,7 +2,7 @@
 // Tokens and victory info come from GameMetadata — no telemetry file scans needed.
 
 import { NextResponse } from 'next/server';
-import { findGameDbs, getRunInfo } from '@/lib/db';
+import { findGameDbs, getRunInfo, buildReplayIndex, findReplayFile } from '@/lib/db';
 import { getAllNotes } from '@/lib/notes';
 import { getRunLogStats } from '@/lib/telemetry';
 import { getConfig } from '@/lib/config';
@@ -12,6 +12,7 @@ export function GET() {
   const config = getConfig();
   const dbFiles = findGameDbs(config.dbDir);
   const allNotes = getAllNotes();
+  const replayIndex = buildReplayIndex(config.replayDir);
 
   const runs = dbFiles
     .map((dbPath) => {
@@ -41,6 +42,7 @@ export function GET() {
         gitBranch: info.gitBranch,
         gitRemote: info.gitRemote,
         strategists: info.strategists,
+        replayFile: findReplayFile(replayIndex, info.turn, info.majorPlayers),
         notes,
       };
     })

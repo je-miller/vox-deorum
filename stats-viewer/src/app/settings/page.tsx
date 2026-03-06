@@ -24,6 +24,7 @@ interface Config {
   dbDir: string;
   telemetryDir: string;
   logsDir: string;
+  replayDir: string;
 }
 
 const emptyConfig: Config = {
@@ -35,6 +36,7 @@ const emptyConfig: Config = {
   dbDir: '',
   telemetryDir: '',
   logsDir: '',
+  replayDir: '',
 };
 
 export default function SettingsPage() {
@@ -70,6 +72,7 @@ export default function SettingsPage() {
         gameRelPath: config.gameRelPath,
         telemetryRelPath: config.telemetryRelPath,
         logsRelPath: config.logsRelPath,
+        replayDir: config.replayDir,
         // Only send manual paths when no profile is active
         ...(config.activeProfile ? {} : {
           dbDir: config.dbDir,
@@ -304,6 +307,25 @@ export default function SettingsPage() {
             value={config.logsDir}
             readOnly={hasActiveProfile}
             onChange={(v) => setConfig((c) => ({ ...c, logsDir: v }))}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Section: Replay Directory */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Replay Files</CardTitle>
+          <CardDescription>
+            Path to Civ 5 Replays directory for linking runs to replay files.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PathField
+            label="Replays Directory"
+            description="e.g. C:\Users\…\My Games\Sid Meier's Civilization 5\Replays"
+            value={config.replayDir}
+            readOnly={false}
+            onChange={(v) => setConfig((c) => ({ ...c, replayDir: v }))}
           />
         </CardContent>
       </Card>

@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, Database, Activity } from 'lucide-react';
+import { ArrowUpDown, Database, Activity, Film } from 'lucide-react';
 
 interface Run {
   gameId: string;
@@ -24,6 +24,7 @@ interface Run {
   gitBranch: string | null;
   gitRemote: string | null;
   strategists: string[];
+  replayFile: string | null;
   notes: { displayName?: string; llmModel?: string; tags: string[]; excluded: boolean };
 }
 
@@ -164,6 +165,17 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
                         <Activity className="h-3.5 w-3.5" />
                       </Button>
                     </Link>
+                    {run.replayFile && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title={`Replay: ${run.replayFile}`}
+                        onClick={() => window.open(`/replay/index.html?file=/api/replay/${encodeURIComponent(run.replayFile!)}`, '_blank')}
+                      >
+                        <Film className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </td>
               </tr>
