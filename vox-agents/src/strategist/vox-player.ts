@@ -69,17 +69,19 @@ export class VoxPlayer {
    * @returns True if this is a new turn notification, false if duplicate
    */
   notifyTurn(turn: number, latestID: number): boolean {
+    const isNew = this.pendingTurn?.turn !== turn;
+
     if (this.running) {
-      this.logger.warn(`The ${this.playerConfig.strategist} is still working on turn ${this.parameters.turn}. Skipping turn ${turn}...`);
+      this.logger.warn(`The ${this.playerConfig.strategist} is still working on turn ${this.parameters.turn}. Queuing turn ${turn}...`);
+      this.pendingTurn = { turn, latestID };
       this.context.callTool("pause-game", { PlayerID: this.playerID }, this.parameters).then(() => {
         if (!this.running) this.context.callTool("resume-game", { PlayerID: this.playerID }, this.parameters);
       });
-      return this.pendingTurn?.turn !== turn;
+      return isNew;
     }
 
-    const result = this.pendingTurn?.turn !== turn;
     this.pendingTurn = { turn, latestID };
-    return result;
+    return isNew;
   }
 
   /**
