@@ -1,0 +1,797 @@
+/* ============================================
+   TABLE OF CONTENTS
+   ============================================
+   1. CSS Variables & Custom Properties
+   2. Reset & Base Styles
+   3. Typography
+   4. Form Elements & Inputs
+   5. Bootstrap Select Customization
+   6. Page Layout & Structure
+   7. UI Borders & Decorative Elements
+   8. Map Container & Controls
+   9. Log Container & Messages
+   10. Control Bar & Media Controls
+   11. Sliders & Interactive Elements
+   12. Leaflet Map Customization
+   13. Utility Classes
+   ============================================ */
+
+/* ============================================
+   1. CSS VARIABLES & CUSTOM PROPERTIES
+   ============================================ */
+:root {
+	--primary-color: #ffffc8;
+	--bg-primary: black;
+	--bg-gradient-start: #0e5d54;
+	--bg-gradient-end: #35746c;
+	--border-gold: #A58B4C;
+	--border-dark: #666;
+	--text-inactive: #3D3D30;
+	--message-border: #07201F;
+	--control-bg: #0D3630;
+	--control-border: #E3C37D;
+	--slider-border-top: #E3D1AA;
+	--slider-border-bottom: #856B36;
+	--top-left-width: 300px; /* Width for top-left section */
+	--right-column-width: 400px; /* Width for right column */
+}
+
+/* ============================================
+   2. RESET & BASE STYLES
+   ============================================ */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+*:focus,
+*:focus-visible {
+	outline: none !important;
+}
+
+/* Drag and drop styles */
+body.drag-over {
+	position: relative;
+}
+
+body.drag-over::after {
+	content: "Drop Civ5Replay file here";
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(13, 54, 48, 0.95);
+	border: 4px dashed var(--border-gold);
+	z-index: 10000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 2rem;
+	color: var(--primary-color);
+	font-family: 'EB Garamond', serif;
+	pointer-events: none;
+}
+
+body {
+	width: 100%;
+	height: 100%;
+	background-color: var(--bg-primary) !important;
+	color: var(--primary-color);
+	font-family: Lato, Verdana, sans-serif;
+	overflow: hidden;
+}
+
+/* ============================================
+   3. TYPOGRAPHY
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+	font-family: 'EB Garamond', serif;
+	color: var(--primary-color);
+	margin: 0;
+	padding: 0;
+}
+
+a {
+	color: var(--primary-color) !important;
+	text-decoration: underline;
+}
+
+/* ============================================
+   4. FORM ELEMENTS & INPUTS
+   ============================================ */
+/* Custom Checkbox Styling */
+input[type=checkbox] {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 10px;
+	height: 10px;
+	background-image: url(ui/checkbox-empty.png);
+	background-size: cover;
+	background-repeat: no-repeat;
+	cursor: pointer;
+}
+
+input[type=checkbox]:checked {
+	background-image: url(ui/checkbox-checked.png);
+}
+
+/* ============================================
+   5. BOOTSTRAP SELECT CUSTOMIZATION
+   ============================================ */
+.bootstrap-select,
+.bootstrap-select .dropdown-toggle,
+.bootstrap-select span {
+	color: var(--primary-color) !important;
+	background: transparent !important;
+	outline: none !important;
+	box-shadow: none !important;
+}
+
+.bootstrap-select {
+	margin-left: 12px !important;
+	margin-top: 3px !important;
+}
+
+.bootstrap-select .dropdown-toggle {
+	border: none !important;
+}
+
+.bootstrap-select .dropdown-toggle:focus {
+	outline: none !important;
+}
+
+/* Dropdown Menu Styling */
+.bootstrap-select .dropdown-menu.open {
+	background: var(--bg-primary) !important;
+	border: 1px solid var(--border-gold) !important;
+	border-top: none !important;
+	border-radius: 0 0 4px 4px;
+	top: 1px;
+	position: relative;
+}
+
+.bootstrap-select .dropdown-menu.inner {
+	background: var(--bg-primary) !important;
+}
+
+/* Dropdown Hover State */
+.bootstrap-select a:hover,
+.bootstrap-select a:hover span {
+	background: linear-gradient(to bottom, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%) !important;
+}
+
+/* Custom Checkmark Icon */
+.glyphicon.glyphicon-ok.check-mark {
+	background-image: url(ui/checkbox-checked.png) !important;
+	width: 10px;
+	height: 10px;
+	background-size: cover !important;
+}
+
+.glyphicon.glyphicon-ok.check-mark:before {
+	content: "";
+}
+
+/* ============================================
+   6. PAGE LAYOUT & STRUCTURE
+   ============================================ */
+/* Header Area */
+.page-header-area {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 37px;
+	font-size: 20px;
+	text-align: center;
+	line-height: 26px;
+	background: url(./ui/header.png) center/contain no-repeat;
+}
+
+/* Main Container */
+.main-container {
+	position: absolute;
+	top: 50px;
+	left: 20px;
+	width: calc(100% - 40px);
+	height: calc(100% - 85px); /* header + legal footer */
+}
+
+/* Disclaimer Footer */
+.disclaimer {
+	position: absolute;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 1000px;
+	height: 32px;
+	text-align: center;
+	font-size: 11px;
+}
+
+/* ============================================
+   7. UI BORDERS & DECORATIVE ELEMENTS
+   ============================================ */
+/* Top Border Elements */
+.top-bar {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 38px;
+}
+
+.top-left-corner,
+.top-right-corner {
+	position: absolute;
+	top: 0;
+	width: 38px;
+	height: 100%;
+	background: url(./ui/border_top_corner.png) center/contain no-repeat;
+}
+
+.top-left-corner {
+	left: 0;
+}
+
+.top-right-corner {
+	right: 0;
+}
+
+.top-left,
+.top-right {
+	position: absolute;
+	top: 0;
+	height: 100%;
+	background-image: url(./ui/border_top_side.png);
+}
+
+.top-left {
+	left: 38px;
+	width: var(--top-left-width);
+}
+
+.top-right {
+	right: 38px;
+	width: calc(var(--right-column-width) - 20px); /* Adjusted to match wider column */
+}
+
+.top-left-split {
+	position: absolute;
+	top: 0;
+	left: calc(38px + var(--top-left-width)); /* 38px + top-left width */
+	width: 3px;
+	height: 100%;
+	background-image: url(./ui/border_top_split.png);
+}
+
+.top-middle {
+	position: absolute;
+	top: 0;
+	left: calc(38px + var(--top-left-width) + 3px); /* 38px + top-left width + 3px */
+	width: calc(100% - 38px - var(--top-left-width) - 3px - 5px - var(--right-column-width) + 20px - 38px); /* dynamic calculation */
+	height: 100%;
+	background-image: url(./ui/border_top_middle.png);
+}
+
+.top-right-split {
+	position: absolute;
+	top: 0;
+	right: calc(38px + var(--right-column-width) - 20px); /* Adjusted for wider column */
+	width: 5px;
+	height: 100%;
+	background-image: url(./ui/border_top_right_split.png);
+}
+
+/* Side Borders */
+.border {
+	position: absolute;
+	top: 38px;
+	width: 11px;
+	height: calc(100% - 38px - 54px);
+	/* top bar, bottom border */
+	background-image: url(./ui/border_side.png);
+	background-repeat: repeat-y;
+}
+
+.left-border {
+	left: 2px;
+}
+
+.right-border {
+	right: 2px;
+}
+
+.split-border {
+	right: calc(var(--right-column-width) + 11px); /* sidebar width + border */
+}
+
+/* Bottom Border Elements */
+.bottom-border {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	height: 54px;
+}
+
+.bottom-left-corner,
+.bottom-right-corner {
+	position: absolute;
+	top: 0;
+	width: 38px;
+	height: 100%;
+}
+
+.bottom-left-corner {
+	left: 0;
+	background-image: url(./ui/border_bottom_corner.png);
+}
+
+.bottom-right-corner {
+	right: 0;
+	background-image: url(./ui/border_bottom_corner.png);
+}
+
+.bottom-left,
+.bottom-right {
+	position: absolute;
+	top: 0;
+	width: calc((100% - 368px) / 2); /* (total - corners - middle) / 2 */
+	height: 100%;
+	background-image: url(./ui/border_bottom_side.png);
+}
+
+.bottom-left {
+	left: 38px;
+}
+
+.bottom-right {
+	right: 38px;
+}
+
+.bottom-middle {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 292px;
+	height: 100%;
+	background-image: url(./ui/border_bottom_middle.png);
+}
+
+/* ============================================
+   8. MAP CONTAINER & CONTROLS
+   ============================================ */
+.map-container {
+	position: absolute;
+	top: 38px;
+	left: 11px;
+	width: calc(100% - var(--right-column-width) - 30px); /* sidebar + borders */
+	height: calc(100% - 92px); /* top + bottom borders */
+	border-right: 1px solid var(--border-dark);
+}
+
+.map {
+	width: 100%;
+	height: 100%;
+}
+
+/* ============================================
+   9. LOG CONTAINER & MESSAGES
+   ============================================ */
+.log-container {
+	position: absolute;
+	top: 38px;
+	right: 11px;
+	width: var(--right-column-width);
+	height: calc(100% - 92px); /* top + bottom borders */
+}
+
+.log-filter-container {
+	height: 30px;
+	width: 100%;
+	border-bottom: 1px solid var(--border-dark);
+}
+
+.log-messages {
+	height: 100%;
+	width: 100%;
+	overflow-y: auto;
+	margin: 0;
+	padding: 0;
+}
+
+/* Message Styling */
+.message {
+	padding: 3px 10px;
+	background-color: var(--bg-primary);
+	border-bottom: 2px solid var(--message-border);
+}
+
+.message:not(.active) {
+	color: var(--text-inactive);
+}
+
+.message.active:hover {
+	background: linear-gradient(to bottom, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+}
+
+.message.hidden {
+	display: none;
+}
+
+/* Civilization Header Styling */
+.civ-header {
+	display: flex;
+	align-items: center;
+	margin-bottom: 4px;
+}
+
+.civ-circle {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 6px;
+	flex-shrink: 0;
+}
+
+.civ-rectangle {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	background-color: #888;
+	margin-right: 6px;
+	flex-shrink: 0;
+}
+
+.civ-name {
+	font-weight: bold;
+	font-size: 0.9em;
+}
+
+.event-text {
+	line-height: 1.4;
+}
+
+/* Formatted game text with icons and colors */
+.formatted-text {
+	line-height: 1.6;
+	display: inline;
+}
+
+.formatted-text .game-icon {
+	margin: 0 3px;
+	font-size: 1.1em;
+	vertical-align: middle;
+	display: inline-block;
+}
+
+/* Special styling for gold icons to look like coins */
+.formatted-text .game-icon.fa-circle {
+	text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+/* Color text styling */
+.formatted-text .colored-text {
+	font-weight: 500;
+}
+
+/* Ensure colored text inherits active/inactive states */
+.message:not(.active) .formatted-text .colored-text {
+	opacity: 0.7;
+}
+
+/* Strategy Change Styling */
+.strategy-change {
+	margin-top: 4px;
+}
+
+.strategy-change-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-bottom: 4px;
+	flex-wrap: wrap;
+}
+
+/* Base styles for all strategy elements */
+.strategy-key {
+	font-weight: bold;
+	min-width: fit-content;
+}
+
+.strategy-from,
+.strategy-to {
+	padding: 2px 6px;
+	border-radius: 3px;
+	font-size: 0.9em;
+	border-width: 1px;
+	border-style: solid;
+}
+
+.strategy-to {
+	font-weight: 500;
+}
+
+.strategy-arrow {
+	font-weight: bold;
+	font-size: 1.1em;
+}
+
+.strategy-rationale {
+	margin-top: 6px;
+	padding: 6px 8px;
+	border-radius: 0 3px 3px 0;
+	line-height: 1.4;
+	border-left-width: 3px;
+	border-left-style: solid;
+}
+
+.rationale-label {
+	font-weight: bold;
+	font-style: normal;
+}
+
+/* Active state colors */
+.message.active .strategy-key {
+	color: var(--primary-color);
+}
+
+.message.active .strategy-from {
+	background-color: rgba(165, 139, 76, 0.2);
+	color: #d4c5a3;
+	border-color: rgba(165, 139, 76, 0.4);
+}
+
+.message.active .strategy-to {
+	background-color: rgba(14, 93, 84, 0.4);
+	color: var(--primary-color);
+	border-color: rgba(14, 93, 84, 0.8);
+}
+
+.message.active .strategy-arrow {
+	color: var(--border-gold);
+}
+
+.message.active .strategy-rationale {
+	background-color: rgba(13, 54, 48, 0.3);
+	border-left-color: var(--border-gold);
+}
+
+.message.active .rationale-label {
+	color: var(--border-gold);
+}
+
+/* Inactive state colors */
+.message:not(.active) .strategy-key {
+	color: var(--text-inactive);
+}
+
+.message:not(.active) .strategy-from {
+	background-color: rgba(61, 61, 48, 0.2);
+	color: #5a5a4a;
+	border-color: rgba(61, 61, 48, 0.4);
+}
+
+.message:not(.active) .strategy-to {
+	background-color: rgba(61, 61, 48, 0.3);
+	color: #6a6a5a;
+	border-color: rgba(61, 61, 48, 0.5);
+}
+
+.message:not(.active) .strategy-arrow {
+	color: #5a5a4a;
+}
+
+.message:not(.active) .strategy-rationale {
+	background-color: rgba(26, 26, 20, 0.3);
+	border-left-color: #4a4a3a;
+	color: var(--text-inactive);
+}
+
+.message:not(.active) .rationale-label {
+	color: #5a5a4a;
+}
+
+/* Turn Separator Styling */
+.turn-separator {
+	padding: 5px 10px;
+	background: linear-gradient(to right, var(--bg-gradient-start), var(--bg-gradient-end));
+	color: var(--primary-color);
+	font-weight: bold;
+	font-family: 'EB Garamond', serif;
+	font-size: 14px;
+	text-align: center;
+	border-top: 2px solid var(--border-gold);
+	border-bottom: 2px solid var(--border-gold);
+	margin: 5px 0;
+}
+
+.turn-separator:not(.active) {
+	background: linear-gradient(to right, #1a1a14, #2a2a1f);
+	color: var(--text-inactive);
+	border-color: var(--message-border);
+}
+
+/* ============================================
+   10. CONTROL BAR & MEDIA CONTROLS
+   ============================================ */
+.control-bar {
+	position: absolute;
+	top: 37px;
+	left: 0;
+	width: calc(100% - var(--right-column-width));
+	height: 50px;
+	border-bottom: 1px solid var(--border-dark);
+	background-size: contain;
+	background-repeat: no-repeat;
+}
+
+/* Play/Pause Button */
+#playPause {
+	position: absolute;
+	left: 10px;
+	top: 6px;
+	width: 33px;
+	height: 27px;
+	background: url(ui/button_black.png) 4px center/contain no-repeat;
+	background-color: transparent;
+	border: none;
+	font-size: 13px;
+	color: #F9FBC5;
+	cursor: pointer;
+}
+
+#playPause:hover {
+	background-image: url(ui/button_green.png);
+}
+
+#playPause > .fa-play {
+	margin-left: -2px;
+}
+
+#playPause > .fa-pause {
+	margin-left: -3px;
+}
+
+/* ============================================
+   11. SLIDERS & INTERACTIVE ELEMENTS
+   ============================================ */
+/* Speed Slider */
+#speedSlider {
+	position: absolute;
+	top: 10px;
+	left: 70px;
+	width: 200px;
+}
+
+/* Turn Slider */
+#turnSlider {
+	position: absolute;
+	width: calc(100% - 30px);
+	left: 15px;
+	top: 9px;
+}
+
+/* Slider Base Styling */
+.slider {
+	border-top: 2px solid var(--slider-border-top);
+	border-bottom: 1px solid var(--slider-border-bottom);
+	border-radius: 20px;
+}
+
+.slider-track {
+	height: 16px !important;
+	width: calc(100% - 2px) !important;
+	margin-top: -9px !important;
+	margin-left: 1px !important;
+	background-image: none;
+}
+
+.slider-selection,
+.tick-slider-selection,
+.slider-track-high {
+	background-color: var(--bg-primary) !important;
+	background-image: none !important;
+	border-radius: 20px;
+}
+
+/* Slider Ticks */
+.slider-tick,
+.slider-tick.in-selection {
+	background-color: var(--bg-gradient-start) !important;
+	background-image: none;
+	width: 5px;
+	height: 5px;
+	top: 5px;
+	margin-left: -2px !important;
+	margin-top: 1px !important;
+}
+
+.slider-track-high + .slider-tick,
+.slider-tick:nth-child(5n) {
+	display: none;
+}
+
+/* Slider Handle */
+.slider-handle {
+	width: 29px;
+	height: 29px;
+	background: url(ui/slider_handle.png) no-repeat;
+	background-color: transparent !important;
+	border-radius: 0 !important;
+	border: none !important;
+	margin-left: -15px !important;
+	margin-top: -7px !important;
+	box-shadow: none !important;
+}
+
+/* ============================================
+   12. LEAFLET MAP CUSTOMIZATION
+   ============================================ */
+.leaflet-container {
+	background: var(--bg-primary) !important;
+}
+
+/* Zoom Controls */
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+	background-color: var(--control-bg) !important;
+	color: var(--primary-color) !important;
+	border: 1px solid var(--control-border) !important;
+}
+
+.leaflet-control-zoom-in {
+	border-bottom: none !important;
+}
+
+/* Layers Control */
+.leaflet-control-layers {
+	background-color: transparent !important;
+	box-shadow: none !important;
+}
+
+.leaflet-control-layers-toggle {
+	width: 64px;
+	height: 64px;
+	background: url(ui/layers.png) center/cover no-repeat;
+	background-color: rgba(12, 53, 48, 0.85);
+	border-radius: 5px;
+	border: 1px solid var(--control-border) !important;
+}
+
+.leaflet-control-layers-list {
+	background: rgba(12, 53, 48, 0.85);
+	padding: 10px 10px 5px 10px;
+	border-radius: 5px;
+	border: 1px solid var(--control-border) !important;
+}
+
+.leaflet-control-layers-list label {
+	color: var(--primary-color);
+	font-size: 13px;
+}
+
+.leaflet-control-layers-list span {
+	padding: 0 5px;
+}
+
+/* ============================================
+   13. UTILITY CLASSES
+   ============================================ */
+.flipped {
+	transform: scaleX(-1);
+	-webkit-transform: scaleX(-1);
+	-moz-transform: scaleX(-1);
+	-o-transform: scaleX(-1);
+	filter: FlipH;
+	-ms-filter: "FlipH";
+}
+
+.textures {
+	display: none;
+}
