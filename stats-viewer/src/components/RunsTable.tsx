@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowUpDown, Database, Activity, Film } from 'lucide-react';
+import { ArrowUpDown, Database, Activity, Map } from 'lucide-react';
 
 interface Run {
   gameId: string;
@@ -173,7 +173,7 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
                         title={`Replay: ${run.replayFile}`}
                         onClick={() => window.open(`/replay/index.html?file=/api/replay/${encodeURIComponent(run.replayFile!)}`, '_blank')}
                       >
-                        <Film className="h-3.5 w-3.5" />
+                        <Map className="h-3.5 w-3.5" />
                       </Button>
                     )}
                   </div>

@@ -1,14 +1,22 @@
 // API route for reading and updating app configuration (data source paths).
+// Returns rawReplayDir alongside resolved config so the frontend can distinguish
+// the stored global replay path from a profile-resolved one.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getConfig, setConfig } from '@/lib/config';
+import { getConfig, getRawConfig, setConfig } from '@/lib/config';
+
+function configWithRaw() {
+  return { ...getConfig(), rawReplayDir: getRawConfig().replayDir };
+}
 
 export function GET() {
-  return NextResponse.json(getConfig());
+  return NextResponse.json(configWithRaw());
 }
 
 export async function PUT(req: NextRequest) {
   const body = await req.json();
-  const updated = setConfig(body);
-  return NextResponse.json(updated);
+  // Strip rawReplayDir from input — it's a read-only computed field
+  delete body.rawReplayDir;
+  setConfig(body);
+  return NextResponse.json(configWithRaw());
 }

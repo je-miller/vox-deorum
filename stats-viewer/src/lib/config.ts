@@ -10,6 +10,7 @@ import path from 'path';
 export interface Profile {
   name: string;      // e.g. "vox-deorum-a"
   rootDir: string;   // e.g. "D:\develop\AgenticAI\vox-deorum-a"
+  replayRelPath?: string;  // Optional per-profile relative replay path; empty/absent = use global replayDir
 }
 
 export interface AppConfig {
@@ -27,7 +28,7 @@ export interface AppConfig {
   telemetryDir: string;
   logsDir: string;
 
-  // Standalone path to Civ 5 Replays directory (not profile-relative).
+  // Absolute path to Civ 5 Replays directory (resolved from replayRelPath when set, or manual).
   replayDir: string;
 }
 
@@ -65,6 +66,10 @@ function resolveProfilePaths(config: AppConfig): AppConfig {
     dbDir: path.join(profile.rootDir, config.gameRelPath),
     telemetryDir: path.join(profile.rootDir, config.telemetryRelPath),
     logsDir: path.join(profile.rootDir, config.logsRelPath),
+    // Resolve replayDir from profile root when the profile has a replayRelPath, otherwise keep the global absolute path.
+    ...(profile.replayRelPath
+      ? { replayDir: path.join(profile.rootDir, profile.replayRelPath) }
+      : {}),
   };
 }
 
@@ -87,9 +92,29 @@ export function getConfig(): AppConfig {
   }
 }
 
+/** Read the raw stored config without resolving profile paths. */
+export function getRawConfig(): AppConfig {
+  ensureDataDir();
+  if (!fs.existsSync(CONFIG_FILE)) {
+    return { ...defaultConfig };
+  }
+  try {
+    const raw = fs.readFileSync(CONFIG_FILE, 'utf-8');
+    const stored = JSON.parse(raw) as Partial<AppConfig>;
+    const merged: AppConfig = { ...defaultConfig, ...stored };
+    if (stored.profiles) {
+      merged.profiles = stored.profiles;
+    }
+    return merged;
+  } catch {
+    return { ...defaultConfig };
+  }
+}
+
 export function setConfig(config: Partial<AppConfig>): AppConfig {
   ensureDataDir();
-  const current = getConfig();
+  // Merge against raw stored config so resolved paths don't leak into storage.
+  const current = getRawConfig();
   const updated: AppConfig = { ...current, ...config };
   // Preserve explicit profiles array from input
   if (config.profiles) {

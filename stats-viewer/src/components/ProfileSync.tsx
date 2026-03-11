@@ -19,13 +19,14 @@ interface Profile {
 }
 
 interface SyncPreview {
-  filesToCopy: { filename: string; gameId: string; type: 'game' | 'telemetry'; sizeBytes: number }[];
+  filesToCopy: { filename: string; gameId: string; type: 'game' | 'telemetry' | 'replay'; sizeBytes: number }[];
   skippedIncomplete: string[];
   skippedExistingCount: number;
   totalBytes: number;
   totalFiles: number;
   gameFileCount: number;
   telemetryFileCount: number;
+  replayFileCount: number;
 }
 
 interface SyncEvent {
@@ -183,7 +184,7 @@ export default function ProfileSync({ profiles }: { profiles: Profile[] }) {
       <CardHeader>
         <CardTitle className="text-base">Sync Data Between Profiles</CardTitle>
         <CardDescription>
-          Copy completed game databases and telemetry files from one profile to another.
+          Copy completed game databases, telemetry, and replay files from one profile to another.
           Incomplete runs and log files are excluded. Existing files are skipped.
         </CardDescription>
       </CardHeader>
@@ -258,6 +259,12 @@ export default function ProfileSync({ profiles }: { profiles: Profile[] }) {
                 <span>{preview.gameFileCount}</span>
                 <span className="text-muted-foreground">Telemetry files to copy</span>
                 <span>{preview.telemetryFileCount}</span>
+                {preview.replayFileCount > 0 && (
+                  <>
+                    <span className="text-muted-foreground">Replay files to copy</span>
+                    <span>{preview.replayFileCount}</span>
+                  </>
+                )}
                 <span className="text-muted-foreground">Total size</span>
                 <span>{formatBytes(preview.totalBytes)}</span>
                 <span className="text-muted-foreground">Already in target (skipped)</span>

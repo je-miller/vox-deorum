@@ -30,7 +30,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
   }
 
-  const plan = buildSyncPlan(source, target, config.gameRelPath, config.telemetryRelPath);
+  const plan = buildSyncPlan(source, target, config.gameRelPath, config.telemetryRelPath, {
+    replayDir: config.replayDir,
+  });
 
   if (action === 'preview') {
     return NextResponse.json({
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
       totalFiles: plan.filesToCopy.length,
       gameFileCount: plan.filesToCopy.filter((f) => f.type === 'game').length,
       telemetryFileCount: plan.filesToCopy.filter((f) => f.type === 'telemetry').length,
+      replayFileCount: plan.filesToCopy.filter((f) => f.type === 'replay').length,
     });
   }
 

@@ -4,7 +4,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { findGameDbs, getRunInfo } from './db';
+import { findGameDbs, getRunInfo, buildReplayIndex, findReplayFile } from './db';
 import { findTelemetryFiles } from './telemetry';
 import type { Profile } from './config';
 
@@ -14,7 +14,7 @@ export interface SyncFile {
   targetPath: string;
   filename: string;
   gameId: string;
-  type: 'game' | 'telemetry';
+  type: 'game' | 'telemetry' | 'replay';
   sizeBytes: number;
 }
 
@@ -57,11 +57,17 @@ function fileSize(filePath: string): number {
  * Only includes runs where outcome is Win or Loss.
  * Skips files that already exist in the target location.
  */
+/** Fallback replay directory used when a profile has no replayRelPath. */
+export interface SyncReplayConfig {
+  replayDir: string;  // Global absolute replay dir fallback
+}
+
 export function buildSyncPlan(
   sourceProfile: Profile,
   targetProfile: Profile,
   gameRelPath: string,
   telemetryRelPath: string,
+  replayConfig?: SyncReplayConfig,
 ): SyncPlan {
   const sourceDbDir = path.join(sourceProfile.rootDir, gameRelPath);
   const targetDbDir = path.join(targetProfile.rootDir, gameRelPath);
@@ -134,6 +140,56 @@ export function buildSyncPlan(
         skippedExisting.push(syncFile);
       } else {
         filesToCopy.push(syncFile);
+      }
+    }
+  }
+
+  // Find replay files for completed games when source and target replay dirs differ.
+  if (replayConfig) {
+    const sourceReplayDir = sourceProfile.replayRelPath
+      ? path.join(sourceProfile.rootDir, sourceProfile.replayRelPath)
+      : replayConfig.replayDir;
+    const targetReplayDir = targetProfile.replayRelPath
+      ? path.join(targetProfile.rootDir, targetProfile.replayRelPath)
+      : replayConfig.replayDir;
+
+    // Only sync replays when source and target are different directories.
+    if (sourceReplayDir && targetReplayDir &&
+        path.resolve(sourceReplayDir) !== path.resolve(targetReplayDir)) {
+      const replayIndex = buildReplayIndex(sourceReplayDir);
+      if (replayIndex.size > 0) {
+        // Check all completed games (including ones whose game DB already existed in target)
+        for (const dbPath of gameDbPaths) {
+          const info = getRunInfo(dbPath);
+          if (!info || info.outcome === 'Incomplete') continue;
+
+          const replayFilename = findReplayFile(replayIndex, info.turn, info.majorPlayers);
+          if (!replayFilename) continue;
+
+          const sourcePath = path.join(sourceReplayDir, replayFilename);
+          const targetPath = path.join(targetReplayDir, replayFilename);
+          const sizeBytes = fileSize(sourcePath);
+          const syncFile: SyncFile = {
+            sourcePath,
+            targetPath,
+            filename: replayFilename,
+            gameId: info.gameId || path.basename(dbPath, '.db'),
+            type: 'replay',
+            sizeBytes,
+          };
+
+          // Avoid duplicates (multiple games could match the same replay file)
+          if (filesToCopy.some((f) => f.sourcePath === sourcePath) ||
+              skippedExisting.some((f) => f.sourcePath === sourcePath)) {
+            continue;
+          }
+
+          if (fs.existsSync(targetPath)) {
+            skippedExisting.push(syncFile);
+          } else {
+            filesToCopy.push(syncFile);
+          }
+        }
       }
     }
   }

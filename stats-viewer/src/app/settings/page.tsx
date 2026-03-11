@@ -13,6 +13,7 @@ import ProfileSync from '@/components/ProfileSync';
 interface Profile {
   name: string;
   rootDir: string;
+  replayRelPath?: string;
 }
 
 interface Config {
@@ -25,6 +26,7 @@ interface Config {
   telemetryDir: string;
   logsDir: string;
   replayDir: string;
+  rawReplayDir: string; // The stored global replayDir, unaffected by profile resolution
 }
 
 const emptyConfig: Config = {
@@ -37,6 +39,7 @@ const emptyConfig: Config = {
   telemetryDir: '',
   logsDir: '',
   replayDir: '',
+  rawReplayDir: '',
 };
 
 export default function SettingsPage() {
@@ -72,8 +75,8 @@ export default function SettingsPage() {
         gameRelPath: config.gameRelPath,
         telemetryRelPath: config.telemetryRelPath,
         logsRelPath: config.logsRelPath,
-        replayDir: config.replayDir,
-        // Only send manual paths when no profile is active
+        // Always send the raw (stored) replayDir — profile resolution is server-side only
+        replayDir: config.rawReplayDir,
         ...(config.activeProfile ? {} : {
           dbDir: config.dbDir,
           telemetryDir: config.telemetryDir,
@@ -120,6 +123,15 @@ export default function SettingsPage() {
   if (loading) return <p className="text-muted-foreground p-6">Loading...</p>;
 
   const hasActiveProfile = config.activeProfile !== null;
+  const activeProfile = config.profiles.find((p) => p.name === config.activeProfile);
+  const activeProfileHasReplayRel = !!(activeProfile?.replayRelPath);
+
+  const updateProfile = (name: string, updates: Partial<Profile>) => {
+    setConfig((c) => ({
+      ...c,
+      profiles: c.profiles.map((p) => p.name === name ? { ...p, ...updates } : p),
+    }));
+  };
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -166,40 +178,54 @@ export default function SettingsPage() {
 
           {/* Existing profiles */}
           {config.profiles.map((profile) => (
-            <label
+            <div
               key={profile.name}
               className={
-                'flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors ' +
+                'rounded-md border p-3 transition-colors ' +
                 (config.activeProfile === profile.name
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-muted-foreground')
               }
             >
-              <input
-                type="radio"
-                name="profile"
-                checked={config.activeProfile === profile.name}
-                onChange={() => selectProfile(profile.name)}
-                className="accent-primary h-4 w-4"
-              />
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium">{profile.name}</span>
-                <p className="text-xs text-muted-foreground truncate">{profile.rootDir}</p>
-              </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  removeProfile(profile.name);
-                }}
-                className="text-muted-foreground hover:text-destructive transition-colors p-1 shrink-0"
-                title={`Remove profile "${profile.name}"`}
-              >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4l8 8M12 4l-8 8" />
-                </svg>
-              </button>
-            </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="profile"
+                  checked={config.activeProfile === profile.name}
+                  onChange={() => selectProfile(profile.name)}
+                  className="accent-primary h-4 w-4"
+                />
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium">{profile.name}</span>
+                  <p className="text-xs text-muted-foreground truncate">{profile.rootDir}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    removeProfile(profile.name);
+                  }}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 shrink-0"
+                  title={`Remove profile "${profile.name}"`}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4l8 8M12 4l-8 8" />
+                  </svg>
+                </button>
+              </label>
+              {config.activeProfile === profile.name && (
+                <div className="mt-2 ml-7">
+                  <label className="text-xs text-muted-foreground">Replay relative path (optional)</label>
+                  <Input
+                    value={profile.replayRelPath ?? ''}
+                    onChange={(e) => updateProfile(profile.name, { replayRelPath: e.target.value || undefined })}
+                    placeholder="Falls back to Replays Directory below"
+                    className="mt-1 h-8 text-sm"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              )}
+            </div>
           ))}
 
           <Separator />
@@ -316,16 +342,18 @@ export default function SettingsPage() {
         <CardHeader>
           <CardTitle className="text-base">Replay Files</CardTitle>
           <CardDescription>
-            Path to Civ 5 Replays directory for linking runs to replay files.
+            {activeProfileHasReplayRel
+              ? 'Resolved from the active profile\'s root directory and replay relative path.'
+              : 'Absolute path to Civ 5 Replays directory. Used as the default when a profile has no replay relative path.'}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <PathField
             label="Replays Directory"
             description="e.g. C:\Users\…\My Games\Sid Meier's Civilization 5\Replays"
-            value={config.replayDir}
-            readOnly={false}
-            onChange={(v) => setConfig((c) => ({ ...c, replayDir: v }))}
+            value={activeProfileHasReplayRel ? config.replayDir : config.rawReplayDir}
+            readOnly={activeProfileHasReplayRel}
+            onChange={(v) => setConfig((c) => ({ ...c, rawReplayDir: v }))}
           />
         </CardContent>
       </Card>
