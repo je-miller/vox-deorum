@@ -1,0 +1,11 @@
+{
+  "name": "random-strategist",
+  "llmPlayers": {
+    "7": {
+      "strategist": "random-strategist"
+    }
+  },
+  "autoPlay": true,
+  "gameMode": "start",
+  "repetition": null
+}
