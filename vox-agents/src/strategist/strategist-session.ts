@@ -249,10 +249,13 @@ export class StrategistSession extends VoxSession<StrategistSessionConfig> {
 
     await mcpClient.callTool("set-metadata", { Key: `experiment`, Value: this.config.name });
 
-    // Store model information from the first player's config
-    const firstPlayerConfig = Object.values(this.config.llmPlayers)[0];
-    if (firstPlayerConfig) {
-      const modelConfig = getModelConfig('default', undefined, firstPlayerConfig.llms);
+    /** Strategists that don't use an LLM and should skip model info storage */
+    const NON_LLM_STRATEGISTS = new Set(['none-strategist', 'random-strategist ']);
+    // Store model information from the first LLM-using player's config
+    const firstLlmPlayerConfig = Object.values(this.config.llmPlayers)
+      .find(p => !NON_LLM_STRATEGISTS.has(p.strategist));
+    if (firstLlmPlayerConfig) {
+      const modelConfig = getModelConfig('default', undefined, firstLlmPlayerConfig.llms);
       await mcpClient.callTool("set-metadata", { Key: 'modelConfig', Value: `${modelConfig.provider}/${modelConfig.name}` });
 
       // Retrieve and store model information from LLM API
@@ -261,7 +264,7 @@ export class StrategistSession extends VoxSession<StrategistSessionConfig> {
       } catch (error) {
         logger.warn('Failed to retrieve or store model information:', error);
         // Continue initialization even if model info fails
-      }      
+      }
     }
 
     await setTimeout(3000);
