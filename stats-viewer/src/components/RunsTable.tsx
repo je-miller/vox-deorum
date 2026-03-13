@@ -18,6 +18,7 @@ interface Run {
   tokens: { input: number; output: number; total: number };
   durationMs: number;
   errorCount: number;
+  flavorChanges: number | null;
   modelName: string | null;
   modelConfig: string | null;
   gitCommit: string | null;
@@ -107,6 +108,7 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
               <th className="px-3 py-2 text-right font-medium"><SortBtn k="turn" label="Turns" /></th>
               <th className="px-3 py-2 text-right font-medium"><SortBtn k="duration" label="Duration" /></th>
               <th className="px-3 py-2 text-right font-medium"><SortBtn k="errors" label="Errors" /></th>
+              <th className="px-3 py-2 text-right font-medium">Flavors</th>
               <th className="px-3 py-2 text-right font-medium"><SortBtn k="tokens" label="In Tokens" /></th>
               <th className="px-3 py-2 text-right font-medium">Out Tokens</th>
               <th className="px-3 py-2 text-left font-medium">Model</th>
@@ -118,7 +120,7 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
           </thead>
           <tbody>
             {sorted.length === 0 && (
-              <tr><td colSpan={15} className="text-center py-8 text-muted-foreground">No runs found</td></tr>
+              <tr><td colSpan={16} className="text-center py-8 text-muted-foreground">No runs found</td></tr>
             )}
             {sorted.map((run) => (
               <tr
@@ -140,6 +142,9 @@ export default function RunsTable({ runs, totalCount }: { runs: Run[]; totalCoun
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtDuration(run.durationMs)}</td>
                 <td className="px-3 py-2 text-right tabular-nums">
                   {run.errorCount > 0 ? <span className="text-red-400 font-semibold">{run.errorCount}</span> : '—'}
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                  {run.flavorChanges != null ? run.flavorChanges : '—'}
                 </td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.input)}</td>
                 <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtNum(run.tokens.output)}</td>

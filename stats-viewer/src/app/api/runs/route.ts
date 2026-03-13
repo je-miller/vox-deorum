@@ -36,6 +36,7 @@ export function GET() {
         tokens: info.tokens,
         durationMs: logStats.durationMs,
         errorCount: logStats.errorCount,
+        flavorChanges: info.flavorChanges,
         modelName: info.modelName,
         modelConfig: info.modelConfig,
         gitCommit: info.gitCommit,

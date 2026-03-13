@@ -241,6 +241,17 @@ export function findGameDbs(dbDir: string): string[] {
   }
 }
 
+// Reads the FlavorChanges sequence value from sqlite_sequence (autoincrement counter).
+// Returns null if the table doesn't exist or has no entry.
+export function getFlavorChangesSeq(db: Database.Database): number | null {
+  try {
+    const row = db.prepare("SELECT seq FROM sqlite_sequence WHERE name = 'FlavorChanges'").get() as { seq: number } | undefined;
+    return row?.seq ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // Lightweight run summary for the dashboard list — only reads GameMetadata + PlayerInformations.
 export interface RunInfo {
   gameId: string;
@@ -259,6 +270,8 @@ export interface RunInfo {
   gitRemote: string | null;
   strategists: string[];
   outcome: 'Win' | 'Loss' | 'Incomplete';
+  // sqlite_sequence value for the FlavorChanges table, null if not present.
+  flavorChanges: number | null;
 }
 
 // Determines win/loss/incomplete using GameMetadata fields only — no heavy table scans.
@@ -295,6 +308,7 @@ export function getRunInfo(dbPath: string): RunInfo | null {
       gitRemote: metadata.gitRemote,
       strategists: metadata.strategists,
       outcome,
+      flavorChanges: getFlavorChangesSeq(db),
     };
   } finally {
     db.close();
